@@ -24,8 +24,10 @@ x.mk_objs = (obj, path_array, val={}) ->
 
 
 x.add_team_perms = (original_team, user) ->
-  # deep cloning team
-  team = JSON.parse(JSON.stringify(original_team))
+  ###
+  return a copy of the team with permissions metadata added to the roles and resources
+  ###
+  team = JSON.parse(JSON.stringify(original_team)) # deep cloning team
   for rsrc_name in auth.resources
     rsrc_auth = auth[rsrc_name]
     perms = x.mk_objs(team.rsrcs, [rsrc_name, 'perms'], {

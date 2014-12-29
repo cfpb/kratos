@@ -16,7 +16,9 @@ get_couchdb_url = (user) ->
 
 x.nano_user = (user) ->
   return require('nano')(get_couchdb_url(user))
+
 x.nano_admin = nano_admin = x.nano_user('admin')
+
 x.ensure_db = (db, method, args...) ->
   ###
   call the method against the db with the given args.
@@ -28,6 +30,7 @@ x.ensure_db = (db, method, args...) ->
     callback = args.pop()
   await
     db[method].apply(db, args.concat([defer(err, resp)]))
+
   if err?.message == 'no_db_file'
     await nano_admin.db.create(db.config.db, defer(err, resp))
     if err

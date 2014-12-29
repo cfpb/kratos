@@ -1,0 +1,10 @@
+{ "name": "base"
+, "version": "0.0.1"
+, "description": "User Management"
+, "modules": ["lib"]
+, "load": "lib/app"
+, "dependencies": 
+  { "modules": null
+  , "properties": null
+  }
+}

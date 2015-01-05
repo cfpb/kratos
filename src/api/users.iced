@@ -41,7 +41,7 @@ users.add_remove_role = (action_type) ->
       value: role
       uuid: uuid.v4()
     }
-    user_db.atomic('base', 'do_action', user, action).pipe(resp)
+    req.couch.use('_users').atomic('base', 'do_action', user, action).pipe(resp)
 
 
 module.exports = users

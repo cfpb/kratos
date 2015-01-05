@@ -31,14 +31,14 @@ exports.updates =
     if action == 'u+'
       container = h.mk_objs(team.roles, [key, 'members'], [])
       if value in container
-        return [null, JSON.stringify(h.add_team_perms(doc, req.userCtx))]
+        return [null, JSON.stringify(h.add_team_perms(team, req.userCtx))]
       else
         container.push(value)
 
     else if action == 'u-'
       container = h.mk_objs(team.roles, [key, 'members'], [])
       if value not in container
-        return [null, JSON.stringify(h.add_team_perms(doc, req.userCtx))]
+        return [null, JSON.stringify(h.add_team_perms(team, req.userCtx))]
       else
         i = container.indexOf(value)
         container.splice(i, 1)
@@ -47,7 +47,7 @@ exports.updates =
       container = h.mk_objs(team.rsrcs, [key, 'assets'], [])
       item = _.find(container, (item) -> (item.id and (item.id==value.id or String(item.id)==value.id)) or (item.new and item.new==value.new))
       if item
-        return [null, JSON.stringify(h.add_team_perms(doc, req.userCtx))]
+        return [null, JSON.stringify(h.add_team_perms(team, req.userCtx))]
       else
         container.push(value)
 
@@ -55,7 +55,7 @@ exports.updates =
       container = h.mk_objs(team.rsrcs, [key, 'assets'], [])
       item = _.find(container, (item) -> item.id==value or String(item.id)==value)
       if not item
-        return [null, JSON.stringify(h.add_team_perms(doc, req.userCtx))]
+        return [null, JSON.stringify(h.add_team_perms(team, req.userCtx))]
       else
         i = container.indexOf(item)
         container.splice(i, 1)
@@ -71,7 +71,7 @@ exports.updates =
       v: value,
       id: body.uuid,
     })
-    return [team, JSON.stringify(h.add_team_perms(doc, req.userCtx))]
+    return [team, JSON.stringify(h.add_team_perms(team, req.userCtx))]
 
 exports.rewrites = [
     {

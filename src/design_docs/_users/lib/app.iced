@@ -1,6 +1,7 @@
 h = require('lib/helpers')
 _ = require('lib/underscore')
 auth = require('./auth/auth')
+validation = require('lib/validation')
 
 module.exports = 
   views:
@@ -38,6 +39,7 @@ module.exports =
       out = []
       while(row = getRow())
         doc = row.doc
+        continue if not validation.is_user(doc)
         doc = h.sanitize_user(doc)
         out.push(doc)
       return JSON.stringify(out)
@@ -58,6 +60,9 @@ module.exports =
         }
       }
       return {body: JSON.stringify(user), "headers" : {"Content-Type" : "application/json"}}
+
+  validate_doc_update: validation.validate_doc_update
+
   updates:
     do_action: (user, req) ->
       if not user
@@ -98,13 +103,10 @@ module.exports =
       })
       return [user, JSON.stringify(h.sanitize_user(user))]
 
-
-
-
   rewrites: [
     {
       from: "/users",
-      to: "/_list/get_users/by_username",
+      to: "/_list/get_users/_all_docs",
       method: 'GET',
       query: {include_docs: 'true'},
     },

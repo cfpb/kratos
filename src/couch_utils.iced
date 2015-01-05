@@ -157,7 +157,7 @@ x.rewrite = (db, design_doc, path, callback) ->
   nano = require('nano')(db.config.url)
   return nano.request({
     db: db_name,
-    path: '/_design/' + design_doc + '/_rewrite' + path,
+    path: '_design/' + design_doc + '/_rewrite' + path,
   }, callback)
 
 # x.add_user = (db, username, password, callback)

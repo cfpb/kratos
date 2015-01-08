@@ -2,6 +2,10 @@ couch_utils = require('../couch_utils')
 request = require('request')
 uuid = require('node-uuid')
 
+resources = {
+  gh: require('../workers/gh'),
+}
+
 teams = {}
 
 teams.create_team = (req, resp) ->
@@ -57,10 +61,29 @@ teams.add_remove_member_asset = (action_type) ->
     db.atomic('base', 'do_action', team, action).pipe(resp)
 
 teams.add_asset = (req, resp) ->
+  org = 'org_' + req.params.org_id
+  team_id = 'team_' + req.params.team_id
+  await team_req = req.couch.use(org).get(team_id, defer(err, team))
+  if err
+    return team_req.pipe(resp)
+
   new_val = req.body.new
   if not new_val
-    return resp.status(400).end(JSON.stringify({'status': 'error', 'msg': 'new value must be present'}))
-  req.params.value = {id: uuid.v4(), 'new': new_val}
+    return resp.status(400).end(JSON.stringify({'error': 'bad_request ', 'msg': '"new" value must be present'}))
+
+  handler = resources[req.params.key]?.add_asset
+  if not handler
+    return resp.status(404).send(JSON.stringify({error: "not_found", msg: 'Resource, ' + req.params.key + ', not found.'}))
+
+  await handler(new_val, team, defer(err, new_asset))
+  if err
+    console.log(err)
+    return resp.status(500).send(JSON.stringify({error: "internal_error", msg: 'Something went wrong'}))
+  if not new_asset?  # no change
+    return resp.send(JSON.stringify(team))
+
+  new_asset.id = uuid.v4()
+  req.params.value = new_asset
   console.log(req.body, req.params.value)
   return teams.add_remove_member_asset('a+')(req, resp)
 

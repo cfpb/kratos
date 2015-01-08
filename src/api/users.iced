@@ -1,7 +1,9 @@
+_ = require('underscore')
 couch_utils = require('../couch_utils')
 users = {}
 user_db = couch_utils.nano_admin.use('_users')
 uuid = require('node-uuid')
+conf = require('../config')
 
 isInt = (s) ->
   return String(parseInt(s)) == s
@@ -42,6 +44,59 @@ users.add_remove_role = (action_type) ->
       uuid: uuid.v4()
     }
     req.couch.use('_users').atomic('base', 'do_action', user, action).pipe(resp)
+
+users.add_data = (req, resp) ->
+  user = 'org.couchdb.user:' + req.params.user_id
+  path_string = req.params.path or ''
+  key = _.compact(path_string.split('/'))
+  value = req.body
+  if _.isArray(value) or not _.isObject(value)
+    return resp.status(400).end(JSON.stringify({'error': 'bad_request ', 'msg': 'data must be an object - {}'}))
+
+  action = {
+    action: 'd+'
+    key: key
+    value: value
+    uuid: uuid.v4()
+  }
+  req.couch.use('_users').atomic('base', 'do_action', user, action).pipe(resp)
+
+users.add_user = (req, resp) ->
+  ###
+  body must be a hash ({}).
+  body must include the following data:
+  {
+    data: {
+      username: <str>,
+      <optional additional data>...
+    }
+  }
+  body may include the following data:
+  {
+    roles: <array>
+    rsrcs: {
+      <rsrc str>: <hash>
+    }
+
+  }
+  ###
+  now = +new Date()
+  user = _.extend({roles: []}, req.body)
+  await couch_utils.get_uuid(defer(err, name))
+  _.extend(user, {
+    _id: "org.couchdb.user:" + name,
+    type: "user",
+    name: name,
+    password: conf.COUCH_PWD,
+    audit: [{u: req.session.user, dt: now, a: 'u+', id: uuid.v4(), r:req.body}],
+  })
+  console.log('USER', user, req)
+  await req = req.couch.use('_users').insert(user, defer(err, user_resp))
+  if err
+    return resp.status(err.statusCode).send(JSON.stringify(error: err.error, msg: err.reason))
+  else
+    return users._get_user(name).pipe(resp)  
+
 
 
 module.exports = users

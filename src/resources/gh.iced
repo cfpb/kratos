@@ -38,12 +38,14 @@ x.import_users = (callback) ->
       type: "user",
       name: uuids[i],
       roles: [],
-      username: member.login,
+      data: {
+        username: member.login,
+      },
       password: conf.COUCH_PWD,
       rsrcs: {
         gh: {
-          login: member.login
-          id: member.id
+          username: member.login,
+          id: member.id,
         }
       },
       audit: [],

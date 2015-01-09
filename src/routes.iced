@@ -18,10 +18,12 @@ module.exports = (app) ->
     app.delete('/kratos/orgs/:org_id/teams/:team_id/resources/:key/:value/', teams.add_remove_member_asset('a-'))
 
     app.get('/kratos/users', users.get_users)
+    app.post('/kratos/users', users.add_user)
     app.get('/kratos/users/:user_id', users.get_user)
     app.put('/kratos/users/:user_id/roles/:resource/:role', users.add_remove_role('r+'))
     app.delete('/kratos/users/:user_id/roles/:resource/:role', users.add_remove_role('r-'))
-
+    # merge data at path with put data
+    app.put('/kratos/users/:user_id/data/:path?*', users.add_data)
     # get the current logged-in user
     app.get('/kratos/user', user.get_user)
 

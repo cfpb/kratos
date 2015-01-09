@@ -14,13 +14,13 @@ module.exports =
     by_resource_username:
       map: (doc) ->
         for resource_name, resource of doc.rsrcs
-          resource_username = resource.username || resource.login
+          resource_username = resource.username
           if resource_username
             emit([resource_name, resource_username], doc.name)
     by_username:
       map: (doc) ->
-        if doc.username
-          emit(doc.username)
+        if doc.data.username
+          emit(doc.data.username)
     by_name:
       map: (doc) ->
         if doc.name
@@ -88,6 +88,16 @@ module.exports =
           i = container.indexOf(role)
           container.splice(i, 1)
         else
+          return [null, JSON.stringify(h.sanitize_user(user))]
+
+      else if action == 'd+'
+        if not user.data
+          user.data = {}
+        container = user.data
+        old_container = JSON.parse(JSON.stringify(container)) # clone original to check if change
+        merge_target = h.mk_objs(container, key, {})
+        _.extend(merge_target, value)
+        if _.isEqual(old_container, container)
           return [null, JSON.stringify(h.sanitize_user(user))]
 
       else

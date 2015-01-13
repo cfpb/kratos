@@ -2,6 +2,7 @@ _ = require('underscore')
 request = require('request')
 couch_utils = require('../couch_utils')
 users = require('../api/users')
+utils = require('../utils')
 conf = require('../config')
 gh_conf = conf.RESOURCES.GH
 
@@ -100,52 +101,73 @@ add_asset = (repo_name, team, callback) ->
       full_name: new_repo_data.full_name,
     }
     errs = {}
-    resps = {}
-    bods = {}
     await
       for team_name, team_id of (team.rsrcs.gh?.data or {})
         url = git_url + '/teams/' + team_id + '/repos/' + new_repo.full_name
-        git_client.put(url, defer(errs[team_id], resps[team_id], bods[team_id]))
-
-    errors = {}
-    for k in _.keys(errs)
-      if errs[k] or resps[k].statusCode >= 400
-        errors[k] = {err: errs[k], msg: bods[k], code: resps[k].statusCode}
-    if _.isEmpty(errors)
-      return callback(null, new_repo)
+        git_client.put(url, utils.process_resp(defer(errs[team_id])))
+    errs = utils.compact_hash(errs)
+    if errs
+      return callback(errs)
     else
-      return callback(errors)
+      return callback(null, new_repo)
+
 
 remove_repo = (repo_full_name, team, callback) ->
   errs = {}
-  resps = {}
-  bods = {}
   await
     for team_name, team_id of (team.rsrcs.gh?.data or {})
       url = git_url + '/teams/' + team_id + '/repos/' + repo_full_name
-      git_client.del(url, defer(errs[team_id], resps[team_id], bods[team_id]))
+      git_client.del(url, utils.process_resp(defer(errs[team_id])))
+  errs = utils.compact_hash(errs)
+  return callback(errs)
 
-  errors = {}
-  for k in _.keys(errs)
-    if errs[k] or resps[k].statusCode >= 400
-      errors[k] = {err: errs[k], msg: bods[k], code: resps[k].statusCode}
-  if _.isEmpty(errors)
-    return callback()
-  else
-    return callback(errors)
 
 handle_remove_repo_event = (event, team, callback) ->
+  repo_full_name = event.r.full_name
+  return remove_repo(repo_full_name, team, callback)
 
-create_team = (team_name, team) ->
+output = {}
+create_team = (team_name, callback) ->
+
+  errs = {}
+  bods = {}
+  url = git_url + '/organizations/' + gh_conf.ORG_ID + '/teams'
+  await
+    for perm, gh_perm of {write: 'push', admin: 'admin'}
+      gh_team = {
+        "name": team_name + ' team ' + perm
+        "permission": gh_perm,
+        "repo_names": []
+      }
+      git_client.post({url: url, json:gh_team}, utils.process_resp(defer(errs[perm], resp, bods[perm])))
+  out_errs = {}
+  out = {}
+  output.bods = bods
+  output.errs = errs
+  for perm, err of errs
+    bod = bods[perm]
+    if err?.code == 422 # the team already exists
+      continue
+    if err
+      out_errs[perm] = err
+      continue
+    out[perm] = bod.id
+
+  if _.isEmpty(out_errs)
+    return callback(null, out)
+  else
+    return callback(out_errs)
 
 handle_create_team = (event, team, callback) ->
+  team_name = team.name
+  return create_team(team_name, callback)
 
 module.exports =
   handlers:
     team:
       'u+': add_remove_user
       'u-': add_remove_user
-      't+': null
+      't+': handle_create_team
       't-': null
       self:
         'a+': null
@@ -159,7 +181,6 @@ module.exports =
       'u+': null
       'u-': null
   add_asset: add_asset
-  remove_repo: remove_repo
   handle_user_event: (event, doc, callback) ->
     # TODO
 

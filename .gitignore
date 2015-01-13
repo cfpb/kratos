@@ -12,8 +12,6 @@
 *.o
 *.so
 _site/
-devops/frontend/src/static/css/main.css
-devops/frontend/src/static/js/main.js
 
 # Packages #
 ############

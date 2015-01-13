@@ -82,7 +82,7 @@ for org in orgs
         resource_updates[entry.id] = {}
         handlers = wh.get_handlers(entry, resources)
         for resource, handler of handlers
-          handler(entry, doc, defer(errs[entry.id][resource]))            
+          handler(entry, doc, defer(errs[entry.id][resource], resource_updates[entry.id][resource]))            
 
     sync_status = {}
     _.each(errs, (rsrc_errs, entry_id) ->

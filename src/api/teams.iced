@@ -1,6 +1,8 @@
 couch_utils = require('../couch_utils')
 request = require('request')
 uuid = require('node-uuid')
+utils = require('../utils')
+_ = require('underscore')
 
 resources = {
   gh: require('../workers/gh'),
@@ -25,7 +27,7 @@ teams.create_team = (req, resp) ->
   org_db = req.couch.use(org)
   org_db.insert(team_doc).on('response', (couch_resp) ->
     if couch_resp.statusCode < 400
-      org_db.get(team_id).pipe(resp)
+      teams._get_team(org_db, team_id).pipe(resp)
     else
       couch_resp.pipe(resp)
   )
@@ -40,6 +42,20 @@ teams.get_team = (req, resp) ->
 
 teams._get_teams = (org_db, callback) ->
   return couch_utils.rewrite(org_db, 'base', '/teams', callback)
+
+teams._get_all_teams = (callback) ->
+  await utils.get_org_dbs(defer(err, org_ids))
+  if err then return callback(err)
+  errs = []
+  resps = []
+  await
+    for org_id, i in org_ids
+      org_db = couch_utils.nano_admin.use(org_id)
+      teams._get_teams(org_db, defer(errs[i], resps[i]))
+  errs = _.compact(errs)
+  if errs.length then return callback(errs)
+  out = _.flatten(resps, true)
+  return callback(null, out)
 
 teams.get_teams = (req, resp) ->
   org = 'org_' + req.params.org_id

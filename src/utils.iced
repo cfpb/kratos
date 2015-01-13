@@ -1,4 +1,6 @@
 _ = require('underscore')
+couch_utils = require('./couch_utils')
+
 x = {}
 
 x.mk_objs = (obj, path_array, val={}) ->
@@ -37,6 +39,7 @@ x.process_resp = (callback) ->
 x.compact_hash = (hash) ->
   ###
   given a hash return a new hash with only non-falsy values. 
+  if the hash will be empty, return undefined
   ###
   out = _.pick(hash, _.identity)
   if _.isEmpty(out)
@@ -44,5 +47,13 @@ x.compact_hash = (hash) ->
   else
     return out
 
+x.get_org_dbs = (callback) ->
+  ###
+  return all organization databases
+  ###
+  await couch_utils.nano_admin.db.list(defer(err, dbs))
+  if err then return callback(err)
+  out = _.filter(dbs, (x) -> x.indexOf('org_') == 0)
+  return callback(null, out)
 
 module.exports = x

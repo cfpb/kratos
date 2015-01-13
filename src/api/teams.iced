@@ -26,9 +26,11 @@ teams.handle_create_team = (req, resp) ->
   }
   org_db = req.couch.use(org)
   org_db.insert(team_doc).on('response', (couch_resp) ->
-    if couch_resp.statusCode < 400
-      teams.get_team(org_db, team_id).pipe(resp)
+    # 409 conflict -> already created, so return the existing team
+    if (couch_resp.statusCode < 400) or (couch_resp.statusCode == 409)
+      teams.get_team(org_db, team_name).pipe(resp)
     else
+      resp.status(couch_resp.statusCode)
       couch_resp.pipe(resp)
   )
 

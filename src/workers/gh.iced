@@ -2,6 +2,7 @@ _ = require('underscore')
 request = require('request')
 couch_utils = require('../couch_utils')
 users = require('../api/users')
+teams = require('../api/teams')
 utils = require('../utils')
 conf = require('../config')
 gh_conf = conf.RESOURCES.GH
@@ -28,32 +29,50 @@ get_gh_team_id = (gh_teams, gh_team_type, callback) ->
   # TODO: create team if it doesn't exist
   return callback(null, team_id)
 
-add_remove_user = (event, team, callback) ->
+
+add_remove_user = (user, role, action_name, team, callback) ->
+  console.log('add_remove_user', user.username, role, action_name, team.name)
+  # we don't add them as a gh user if they aren't a gh|user
+  # but we will happily remove them as a gh user if they aren't a gh|user
+  if action_name == 'a+' and 'gh|user' not in user.roles
+    return callback()
+  console.log('past first hurdle')
+  gh_teams = team.rsrcs.gh.data
+
+  gh_username = user.rsrcs.gh?.username
+  if not gh_username
+    return callback({user: user, err: 'no github username'})
+
+  gh_team_type = get_gh_team_type(user, role)
+  await get_gh_team_id(gh_teams, gh_team_type, defer(err, gh_team_id))
+  return callback(err) if err
+  console.log('gh_team_id', gh_team_id)
+
+  action = if action_name == 'u+' then git_client.put else git_client.del
+  url = git_url + '/teams/' + gh_team_id + '/memberships/' + gh_username
+  await action(url, utils.process_resp(defer(err, resp, body)))
+  console.log(err, body)
+  return callback(err)
+
+
+add_user = (user, role, team, callback) ->
+  return add_remove_user(user, role, 'a+', team, callback)
+
+
+remove_user = (user, role, team, callback) ->
+  return add_remove_user(user, role, 'a-', team, callback)
+
+
+handle_add_remove_user = (event, team, callback) ->
   action_name = event.a
   user_id = event.v
   role = event.k
-  gh_teams = team.rsrcs.gh.data
 
-  await users._get_user(user_id, defer(err, user))
+  await users.get_user(user_id, defer(err, user))
   return callback(err) if err
 
-  if 'gh|user' not in user.roles
-    return callback()
+  return add_remove_user(user, role, action_name, team, callback)
 
-  username = user.rsrcs.gh?.username
-  if not username
-    return callback({user: user, err: 'no username'})
-
-  gh_team_type = get_gh_team_type(user, role)
-  await get_gh_team_id(gh_teams, gh_team_type, defer(err, team_id))
-  return callback(err) if err
-
-  action = if action_name == 'u+' then git_client.put else git_client.del
-  url = git_url + '/teams/' + team_id + '/memberships/' + username
-  await action(url, defer(err, resp, body))
-  if resp?.statusCode >= 400
-    return callback({msg: body, code: resp.statusCode})
-  return callback(err)
 
 _get_or_create_repo = (repo_name, callback) ->
   url = git_url + '/organizations/' + gh_conf.ORG_ID + '/repos'
@@ -162,11 +181,39 @@ handle_create_team = (event, team, callback) ->
   team_name = team.name
   return create_team(team_name, callback)
 
+handle_add_remove_gh_rsrc_role = (event, user, callback) ->
+  await teams.get_all_teams(defer(err, all_teams))
+  if err then return callback(err)
+
+  action_name = {'r+': 'u+', 'r-': 'u-'}[event.a]
+
+  team_roles = []
+
+  for team in all_teams
+    for role, role_data of team.roles
+      if role_data.members and user.name in role_data.members
+        team_roles.push({team: team, role: role})
+
+  errs = []
+  resps = []
+  await
+    for team_role, i in team_roles
+      add_remove_user(user, team_role.role, action_name, team_role.team, defer(errs[i], resps[i]))
+  errs = _.compact(errs)
+  if errs.length then return callback(errs)
+
+  # merge all responses
+  out = {}
+  for resp in resps
+    if resp
+      _.extend(out, resp)
+  return callback(null, out)
+
 module.exports =
   handlers:
     team:
-      'u+': add_remove_user
-      'u-': add_remove_user
+      'u+': handle_add_remove_user
+      'u-': handle_add_remove_user
       't+': handle_create_team
       't-': null
       self:
@@ -176,8 +223,12 @@ module.exports =
         'a+': null
         'a-': null
     user:
-      'r+': null
-      'r-': null
+      self:
+        'r+': handle_add_remove_gh_rsrc_role
+        'r-': handle_add_remove_gh_rsrc_role
+      other:
+        'r+': null
+        'r-': null
       'u+': null
       'u-': null
   add_asset: add_asset

@@ -2,7 +2,10 @@ _ = require('underscore')
 follow = require('follow')
 couch_utils = require('./couch_utils')
 conf = require('./config')
-team_validation = require('./design_docs/org/lib/validation')
+validation = {
+  team: require('./design_docs/org/lib/validation')
+  user: require('./design_docs/_users/lib/validation')
+}
 utils = require('./utils')
 wh = require('./worker_helpers')
 
@@ -27,13 +30,13 @@ get_new_synced_state = (old_entry, new_synced_state) ->
   if old_entry.synced
     return old_entry.synced
 
-update_audit_entries = (db, team_id, sync_status, resource_updates, callback) ->
-  await db.get(team_id, defer(err, team))
+update_audit_entries = (db, doc_id, sync_status, resource_updates, callback) ->
+  await db.get(doc_id, defer(err, doc))
   return callback(err) if err
 
   dirty = false
   for entry_id, new_synced of sync_status
-    entry = _.findWhere(team.audit, {id: entry_id})
+    entry = _.findWhere(doc.audit, {id: entry_id})
     old_synced = entry.synced
     final_synced = old_synced or new_synced
     if final_synced != old_synced
@@ -44,20 +47,24 @@ update_audit_entries = (db, team_id, sync_status, resource_updates, callback) ->
     for resource, update of updates
       if update
         dirty = true
-        old_data = utils.mk_objs(team, ['rsrcs', resource, 'data'], {})
+        if validation.team.is_team(doc)
+          old_data = utils.mk_objs(doc, ['rsrcs', resource, 'data'], {})
+        else if validation.user.is_user(doc)
+          old_data = utils.mk_objs(doc, ['rsrcs', resource], {})
+        else
+          old_data = {}
         _.extend(old_data, update)
 
   if dirty
-    await db.insert(team, defer(err, resp))
+    await db.insert(doc, defer(err, resp))
     if err?.status_code == 409
-      return update_audit_entries(db, team_id, entries, errs, callback)
+      return update_audit_entries(db, doc_id, entries, errs, callback)
     else
       return callback(err)
   return callback()
 
 
-for org in orgs
-  db = couch_utils.nano_admin.use('org_' + org)
+start_worker = (db, db_type) ->
   opts = 
     db: db.config.url + '/' + db.config.db
     include_docs: true
@@ -65,13 +72,15 @@ for org in orgs
   feed = new follow.Feed(opts);
 
   feed.filter = (doc, req) ->
-    if not team_validation.is_team(doc)
+    if doc._deleted
+      return false
+    else if not validation[db_type]['is_' + db_type](doc)
       return false
     else
       return true
 
   feed.on 'change', (change) ->
-    console.log('handling change')
+    console.log('handling ' + db_type + ' change')
     doc = change.doc
     unsynced_audit_entries = get_unsynced_audit_entries(doc.audit)
     errs = {}
@@ -80,9 +89,9 @@ for org in orgs
       for entry in unsynced_audit_entries
         errs[entry.id] = {}
         resource_updates[entry.id] = {}
-        handlers = wh.get_handlers(entry, resources)
+        handlers = wh.get_handlers(entry, db_type, resources)
         for resource, handler of handlers
-          handler(entry, doc, defer(errs[entry.id][resource], resource_updates[entry.id][resource]))            
+          handler(entry, doc, defer(errs[entry.id][resource], resource_updates[entry.id][resource]))
 
     sync_status = {}
     _.each(errs, (rsrc_errs, entry_id) ->
@@ -99,3 +108,12 @@ for org in orgs
 
   feed.follow()
 
+
+# org workers
+for org in orgs
+  db = couch_utils.nano_admin.use('org_' + org)
+  start_worker(db, 'team')
+
+# _users worker
+db = couch_utils.nano_admin.use('_users')
+start_worker(db, 'user')

@@ -1,6 +1,8 @@
 couch_utils = require('../couch_utils')
 request = require('request')
 uuid = require('node-uuid')
+utils = require('../utils')
+_ = require('underscore')
 
 resources = {
   gh: require('../workers/gh'),
@@ -8,7 +10,7 @@ resources = {
 
 teams = {}
 
-teams.create_team = (req, resp) ->
+teams.handle_create_team = (req, resp) ->
   now = +new Date()
   user = req.session.user
   org = 'org_' + req.params.org_id
@@ -25,28 +27,42 @@ teams.create_team = (req, resp) ->
   org_db = req.couch.use(org)
   org_db.insert(team_doc).on('response', (couch_resp) ->
     if couch_resp.statusCode < 400
-      org_db.get(team_id).pipe(resp)
+      teams.get_team(org_db, team_id).pipe(resp)
     else
       couch_resp.pipe(resp)
   )
 
-teams._get_team = (org_db, team_id, callback) ->
+teams.get_team = (org_db, team_id, callback) ->
   return couch_utils.rewrite(org_db, 'base', '/teams/team_' + team_id, callback)
 
-teams.get_team = (req, resp) ->
+teams.handle_get_team = (req, resp) ->
   org = 'org_' + req.params.org_id
   org_db = req.couch.use(org)
-  teams._get_team(org_db, req.params.team_id).pipe(resp)
+  teams.get_team(org_db, req.params.team_id).pipe(resp)
 
-teams._get_teams = (org_db, callback) ->
+teams.get_teams = (org_db, callback) ->
   return couch_utils.rewrite(org_db, 'base', '/teams', callback)
 
-teams.get_teams = (req, resp) ->
+teams.get_all_teams = (callback) ->
+  await utils.get_org_dbs(defer(err, org_ids))
+  if err then return callback(err)
+  errs = []
+  resps = []
+  await
+    for org_id, i in org_ids
+      org_db = couch_utils.nano_admin.use(org_id)
+      teams.get_teams(org_db, defer(errs[i], resps[i]))
+  errs = _.compact(errs)
+  if errs.length then return callback(errs)
+  out = _.flatten(resps, true)
+  return callback(null, out)
+
+teams.handle_get_teams = (req, resp) ->
   org = 'org_' + req.params.org_id
   org_db = req.couch.use(org)
-  teams._get_teams(org_db).pipe(resp)
+  teams.get_teams(org_db).pipe(resp)
 
-teams.add_remove_member_asset = (action_type) ->
+teams.handle_add_remove_member_asset = (action_type) ->
   (req, resp) ->
     org = 'org_' + req.params.org_id
     team = 'team_' + req.params.team_id
@@ -60,7 +76,7 @@ teams.add_remove_member_asset = (action_type) ->
     }
     db.atomic('base', 'do_action', team, action).pipe(resp)
 
-teams.add_asset = (req, resp) ->
+teams.handle_add_asset = (req, resp) ->
   org = 'org_' + req.params.org_id
   team_id = 'team_' + req.params.team_id
   await team_req = req.couch.use(org).get(team_id, defer(err, team))
@@ -85,6 +101,6 @@ teams.add_asset = (req, resp) ->
   new_asset.id = uuid.v4()
   req.params.value = new_asset
   console.log(req.body, req.params.value)
-  return teams.add_remove_member_asset('a+')(req, resp)
+  return teams.handle_add_remove_member_asset('a+')(req, resp)
 
 module.exports = teams

@@ -8,10 +8,10 @@ conf = require('../config')
 isInt = (s) ->
   return String(parseInt(s)) == s
 
-users._get_users = (callback) ->
+users.get_users = (callback) ->
   return couch_utils.rewrite(user_db, 'base', '/users', callback)
 
-users.get_users = (req, resp) ->
+users.handle_get_users = (req, resp) ->
   for resource, rsrcs_id of req.query
     break
 
@@ -23,15 +23,15 @@ users.get_users = (req, resp) ->
                     {include_docs: true, key: [resource, rsrcs_id]})
       .pipe(resp)
   else
-    users._get_users().pipe(resp)
+    users.get_users().pipe(resp)
 
-users._get_user = (user_id, callback) ->
+users.get_user = (user_id, callback) ->
   return couch_utils.rewrite(user_db, 'base', '/users/org.couchdb.user:' + user_id, callback)
 
-users.get_user = (req, resp) ->
-  users._get_user(req.params.user_id).pipe(resp)  
+users.handle_get_user = (req, resp) ->
+  users.get_user(req.params.user_id).pipe(resp)  
 
-_add_remove_role = (client, action_type, user, resource, role, callback) ->
+add_remove_role = (client, action_type, user, resource, role, callback) ->
   action = {
     action: action_type
     key: resource
@@ -40,21 +40,21 @@ _add_remove_role = (client, action_type, user, resource, role, callback) ->
   }
   return client.use('_users').atomic('base', 'do_action', user, action, callback)
 
-users._add_role = (client, user, resource, role, callback) ->
-  return _add_remove_role(client, 'a+', user, resource, role, callback)
+users.add_role = (client, user, resource, role, callback) ->
+  return add_remove_role(client, 'a+', user, resource, role, callback)
 
-users._remove_role = (client, user, resource, role, callback) ->
-  return _add_remove_role(client, 'a-', user, resource, role, callback)
+users.remove_role = (client, user, resource, role, callback) ->
+  return add_remove_role(client, 'a-', user, resource, role, callback)
 
-users.add_remove_role = (action_type) ->
+users.handle_add_remove_role = (action_type) ->
   (req, resp) ->
     user = 'org.couchdb.user:' + req.params.user_id
     resource = req.params.resource
     role = req.params.role
 
-    return _add_remove_role(req.couch, action_type, user, resource, role).pipe(resp)
+    return add_remove_role(req.couch, action_type, user, resource, role).pipe(resp)
 
-users.add_data = (req, resp) ->
+users.handle_add_data = (req, resp) ->
   user = 'org.couchdb.user:' + req.params.user_id
   path_string = req.params.path or ''
   key = _.compact(path_string.split('/'))
@@ -70,7 +70,7 @@ users.add_data = (req, resp) ->
   }
   req.couch.use('_users').atomic('base', 'do_action', user, action).pipe(resp)
 
-users.add_user = (req, resp) ->
+users.handle_add_user = (req, resp) ->
   ###
   body must be a hash ({}).
   body must include the following data:
@@ -103,7 +103,7 @@ users.add_user = (req, resp) ->
   if err
     return resp.status(err.statusCode).send(JSON.stringify(error: err.error, msg: err.reason))
   else
-    return users._get_user(name).pipe(resp)  
+    return users.get_user(name).pipe(resp)  
 
 
 

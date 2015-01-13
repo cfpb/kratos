@@ -68,7 +68,7 @@ handle_add_remove_user = (event, team, callback) ->
   user_id = event.v
   role = event.k
 
-  await users._get_user(user_id, defer(err, user))
+  await users.get_user(user_id, defer(err, user))
   return callback(err) if err
 
   return add_remove_user(user, role, action_name, team, callback)
@@ -181,8 +181,8 @@ handle_create_team = (event, team, callback) ->
   team_name = team.name
   return create_team(team_name, callback)
 
-handle_add_remove_gh_user_role = (event, user, callback) ->
-  await teams._get_all_teams(defer(err, all_teams))
+handle_add_remove_gh_rsrc_role = (event, user, callback) ->
+  await teams.get_all_teams(defer(err, all_teams))
   if err then return callback(err)
 
   action_name = {'r+': 'u+', 'r-': 'u-'}[event.a]
@@ -224,8 +224,8 @@ module.exports =
         'a-': null
     user:
       self:
-        'r+': handle_add_remove_gh_user_role
-        'r-': handle_add_remove_gh_user_role
+        'r+': handle_add_remove_gh_rsrc_role
+        'r-': handle_add_remove_gh_rsrc_role
       other:
         'r+': null
         'r-': null

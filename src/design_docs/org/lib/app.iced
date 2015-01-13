@@ -58,19 +58,22 @@ exports.updates =
         return [null, JSON.stringify(h.add_team_perms(team, req.userCtx))]
       else
         i = container.indexOf(item)
-        container.splice(i, 1)
+        record = container.splice(i, 1)[0]
 
     else
       return [null, '{"status": "error", "msg": "invalid action"}']
 
-    team.audit.push({
+    entry = {
       u: req.userCtx.name,
       dt: +new Date(),
       a: action,
       k: key,
       v: value,
       id: body.uuid,
-    })
+    }
+    if record?
+      entry.r = record
+    team.audit.push(entry)
     return [team, JSON.stringify(h.add_team_perms(team, req.userCtx))]
 
 exports.rewrites = [

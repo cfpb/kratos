@@ -31,19 +31,28 @@ users._get_user = (user_id, callback) ->
 users.get_user = (req, resp) ->
   users._get_user(req.params.user_id).pipe(resp)  
 
+_add_remove_role = (client, action_type, user, resource, role, callback) ->
+  action = {
+    action: action_type
+    key: resource
+    value: role
+    uuid: uuid.v4()
+  }
+  return client.use('_users').atomic('base', 'do_action', user, action, callback)
+
+users._add_role = (client, user, resource, role, callback) ->
+  return _add_remove_role(client, 'a+', user, resource, role, callback)
+
+users._remove_role = (client, user, resource, role, callback) ->
+  return _add_remove_role(client, 'a-', user, resource, role, callback)
+
 users.add_remove_role = (action_type) ->
   (req, resp) ->
     user = 'org.couchdb.user:' + req.params.user_id
     resource = req.params.resource
     role = req.params.role
 
-    action = {
-      action: action_type
-      key: resource
-      value: role
-      uuid: uuid.v4()
-    }
-    req.couch.use('_users').atomic('base', 'do_action', user, action).pipe(resp)
+    return _add_remove_role(req.couch, action_type, user, resource, role).pipe(resp)
 
 users.add_data = (req, resp) ->
   user = 'org.couchdb.user:' + req.params.user_id
@@ -90,7 +99,6 @@ users.add_user = (req, resp) ->
     password: conf.COUCH_PWD,
     audit: [{u: req.session.user, dt: now, a: 'u+', id: uuid.v4(), r:req.body}],
   })
-  console.log('USER', user, req)
   await req = req.couch.use('_users').insert(user, defer(err, user_resp))
   if err
     return resp.status(err.statusCode).send(JSON.stringify(error: err.error, msg: err.reason))

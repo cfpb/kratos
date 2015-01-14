@@ -2,6 +2,7 @@
 ########
 /lib/config_secret.js
 /src/config_secret.iced
+/template_repo
 
 # Compiled source #
 ###################

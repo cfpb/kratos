@@ -4,6 +4,7 @@ couch_utils = require('../couch_utils')
 users = require('../api/users')
 teams = require('../api/teams')
 utils = require('../utils')
+{exec} = require 'child_process'
 conf = require('../config')
 gh_conf = conf.RESOURCES.GH
 
@@ -16,6 +17,12 @@ git_client = request.defaults({
 })
 git_url = 'https://api.github.com'
 user_db = couch_utils.nano_admin.use('_users')
+
+get_authenticated_repo_url = (repo_url) ->
+  repo_parts = repo_url.split('//')
+  repo_parts[1] = gh_conf.ADMIN_CREDENTIALS.pass + ':x-oauth-basic@' + repo_parts[1]
+  authed_repo_url = repo_parts.join('//')
+  return authed_repo_url
 
 get_gh_team_type = (user, role) ->
   is_contractor = user.data?.contractor
@@ -102,7 +109,17 @@ _get_or_create_repo = (repo_name, callback) ->
   else if resp.statusCode >= 400
     return callback({msg: body, code: resp.statusCode})
   else
-    # TODO add template
+    template_dir = './template_repo/'
+    await exec('git init', {cwd: template_dir}, defer(err, stdout, stderr))
+    if err then return callback(err)
+
+    await exec('git pull "' + gh_conf.TEMPLATE_REPO + '"', {cwd: template_dir}, defer(err, stdout, stderr))
+    if err then return callback(err)
+
+    push_repo_url = get_authenticated_repo_url(body.clone_url)
+    await exec('git push "' + push_repo_url + '" master', {cwd: template_dir}, defer(err, stdout, stderr))
+    if err then return callback(err)
+
     return callback(null, body)
 
 add_asset = (repo_name, team, callback) ->

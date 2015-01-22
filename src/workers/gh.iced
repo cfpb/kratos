@@ -8,6 +8,10 @@ utils = require('../utils')
 conf = require('../config')
 gh_conf = conf.RESOURCES.GH
 
+path = require('path')
+KRATOS_DIR = path.join(__dirname, '../..')
+TEMPLATE_DIR = path.join(KRATOS_DIR, './template_repo/')
+
 git_client = request.defaults({
   auth: gh_conf.ADMIN_CREDENTIALS,
   headers: {
@@ -109,15 +113,14 @@ _get_or_create_repo = (repo_name, callback) ->
   else if resp.statusCode >= 400
     return callback({msg: body, code: resp.statusCode})
   else
-    template_dir = './template_repo/'
-    await exec('git init', {cwd: template_dir}, defer(err, stdout, stderr))
+    await exec('git init', {cwd: TEMPLATE_DIR}, defer(err, stdout, stderr))
     if err then return callback(err)
 
-    await exec('git pull "' + gh_conf.TEMPLATE_REPO + '"', {cwd: template_dir}, defer(err, stdout, stderr))
+    await exec('git pull "' + gh_conf.TEMPLATE_REPO + '"', {cwd: TEMPLATE_DIR}, defer(err, stdout, stderr))
     if err then return callback(err)
 
     push_repo_url = get_authenticated_repo_url(body.clone_url)
-    await exec('git push "' + push_repo_url + '" master', {cwd: template_dir}, defer(err, stdout, stderr))
+    await exec('git push "' + push_repo_url + '" master', {cwd: TEMPLATE_DIR}, defer(err, stdout, stderr))
     if err then return callback(err)
 
     return callback(null, body)

@@ -41,7 +41,7 @@ add_remove_user = (user, role, action_name, team, callback) ->
   console.log('add_remove_user', user.username, role, action_name, team.name)
   # we don't add them as a gh user if they aren't a gh|user
   # but we will happily remove them as a gh user if they aren't a gh|user
-  if action_name == 'a+' and 'gh|user' not in user.roles
+  if action_name == 'u+' and 'gh|user' not in user.roles
     return callback()
   console.log('past first hurdle')
   gh_teams = team.rsrcs.gh.data
@@ -63,11 +63,11 @@ add_remove_user = (user, role, action_name, team, callback) ->
 
 
 add_user = (user, role, team, callback) ->
-  return add_remove_user(user, role, 'a+', team, callback)
+  return add_remove_user(user, role, 'u+', team, callback)
 
 
 remove_user = (user, role, team, callback) ->
-  return add_remove_user(user, role, 'a-', team, callback)
+  return add_remove_user(user, role, 'u-', team, callback)
 
 
 handle_add_remove_user = (event, team, callback) ->

@@ -55,7 +55,7 @@ option '-n', '--db_name [name]', 'db name to import to'
 task 'import_from_gh', 'Import from Github - not idempotent!!', (options) ->
   db_name = options.db_name
   users_api = require('./lib/api/users')
-  await users_api._get_users(defer(err, resp))
+  await users_api.get_users(defer(err, resp))
   return console.log(err) if err
   if resp.length
     return console.error('ERROR:: User database already contains users. This script can only import users into an empty _users database.')

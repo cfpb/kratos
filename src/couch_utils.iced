@@ -15,7 +15,7 @@ get_couchdb_url = (user) ->
   out += conf.COUCHDB.HOST + ':' + conf.COUCHDB.PORT
 
 x.nano_user = (user) ->
-  return require('nano')(get_couchdb_url(user))
+  return require('nano')({url: get_couchdb_url(user)})
 
 x.nano_admin = nano_admin = x.nano_user('admin')
 
@@ -74,7 +74,6 @@ x.sync_all_db_design_docs = (db_type) ->
   await nano_admin.db.list(defer(err, all_dbs))
   dbs = _.filter(all_dbs, (db) -> db.indexOf(db_type) == 0)
   errs = []
-  console.log(dbs)
   await
     for db_name, i in dbs
       x.sync_design_docs(db_name, design_docs, defer(errs[i]))
@@ -90,7 +89,6 @@ x.sync_design_docs = (db_name, design_doc_names, callback) ->
     for name, i in design_doc_names
       url = get_couchdb_url('admin') + '/' + db_name
       cmd = 'kanso push ' + name + ' ' + url
-      console.log(cmd)
       wd = path.join(path.dirname(fs.realpathSync(__filename)), './design_docs')
       cp = exec(cmd, {cwd: wd}, defer(errors[i]))
       cp.stdout.pipe(process.stdout)
@@ -152,13 +150,15 @@ x.get_uuids = (count, callback) ->
     return callback(err, resp)
   return callback(null, resp.uuids)
 
-x.rewrite = (db, design_doc, path, callback) ->
-  db_name = db.config.db
+x.rewrite = (db, design_doc, user_opts, callback) ->
+  if _.isString(user_opts)
+    user_opts = {path: user_opts}
+
+  opts = { db: db.config.db }
+  _.extend(opts, user_opts)
+  opts.path = '_design/' + design_doc + '/_rewrite' + opts.path
   nano = require('nano')(db.config.url)
-  return nano.request({
-    db: db_name,
-    path: '_design/' + design_doc + '/_rewrite' + path,
-  }, callback)
+  return nano.request(opts, callback)
 
 # x.add_user = (db, username, password, callback)
 #   if _.isFunction(password) and not callback?

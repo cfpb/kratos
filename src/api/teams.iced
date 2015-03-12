@@ -1,4 +1,5 @@
 couch_utils = require('../couch_utils')
+utils = require('../utils')
 request = require('request')
 uuid = require('node-uuid')
 utils = require('../utils')
@@ -59,6 +60,23 @@ teams.get_all_teams = (callback) ->
   out = _.flatten(resps, true)
   return callback(null, out)
 
+teams.getTeamRolesForUser = (user, callback) ->
+  ###
+  return an array of team/role hashes to which the user belongs:
+    [{team: <obj>, role: <str>}]
+  ###
+  await teams.get_all_teams(defer(err, all_teams))
+  if err then return callback(err)
+
+  team_roles = []
+
+  for team in all_teams
+    for role, role_data of team.roles
+      if user.name in (role_data.members or [])
+        team_roles.push({team: team, role: role})
+
+  return callback(null, team_roles)
+
 teams.handle_get_teams = (req, resp) ->
   org = 'org_' + req.params.org_id
   org_db = req.couch.use(org)
@@ -93,7 +111,7 @@ teams.handle_add_asset = (req, resp) ->
   if not handler
     return resp.status(404).send(JSON.stringify({error: "not_found", msg: 'Resource, ' + req.params.key + ', not found.'}))
 
-  await handler(new_val, team, defer(err, new_asset))
+  await handler(new_val, team).nodeify(defer(err, new_asset))
   if err
     console.log(err)
     return resp.status(500).send(JSON.stringify({error: "internal_error", msg: 'Something went wrong'}))
@@ -105,4 +123,5 @@ teams.handle_add_asset = (req, resp) ->
   console.log(req.body, req.params.value)
   return teams.handle_add_remove_member_asset('a+')(req, resp)
 
+utils.denodeify_api(teams)
 module.exports = teams

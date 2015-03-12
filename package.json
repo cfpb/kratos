@@ -3,17 +3,19 @@
   "description": "Enterprise Authorization Enforcement",
   "author": "David Greisen <david.greisen@cfpb.gov",
   "dependencies": {
-    "iced-runtime": "1.0.2"
-  , "express": "4.10.4"
-  , "body-parser": "1.10.0"
-  , "cookie-session": "1.1.0"
-  , "basic-auth": "1.0.0"
-  , "nano": "6.0.2"
-  , "request": "2.49.0"
-  , "follow": "0.11.4"
-  , "underscore": "1.7.0"
-  , "parse-links": "0.1.0"
-  , "node-uuid": "1.4.2"
+    "basic-auth": "1.0.0",
+    "body-parser": "1.10.0",
+    "cookie-session": "1.1.0",
+    "express": "4.10.4",
+    "follow": "0.11.4",
+    "iced-runtime": "1.0.2",
+    "nano": "6.0.2",
+    "node-uuid": "1.4.2",
+    "parse-links": "0.1.0",
+    "promise": "^6.1.0",
+    "request": "2.49.0",
+    "underscore": "1.7.0",
+    "underscore.string": "~3.0.3"
   },
   "devDependencies": {
     "vows": "0.5.x"

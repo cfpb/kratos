@@ -74,6 +74,7 @@ start_worker = (db, db_type) ->
   feed.filter = (doc, req) ->
     if doc._deleted
       return false
+    # if not a user/team document, skip
     else if not validation[db_type]['is_' + db_type](doc)
       return false
     else
@@ -91,7 +92,7 @@ start_worker = (db, db_type) ->
         resource_updates[entry.id] = {}
         handlers = wh.get_handlers(entry, db_type, resources)
         for resource, handler of handlers
-          handler(entry, doc, defer(errs[entry.id][resource], resource_updates[entry.id][resource]))
+          handler(entry, doc).nodeify(defer(errs[entry.id][resource], resource_updates[entry.id][resource]))
 
     sync_status = {}
     _.each(errs, (rsrc_errs, entry_id) ->

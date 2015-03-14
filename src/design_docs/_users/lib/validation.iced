@@ -1,4 +1,4 @@
-auth = require('./auth/auth')
+validation = require('./validation/validation')
 vh = require('./validation_helpers')
 
 v = {}
@@ -14,10 +14,9 @@ v.validate_doc_update = (new_doc, old_doc, user_ctx, sec_obj) ->
   if not new_audit_entries.length
     return
 
-  actions =
-    'r+': (event, user) -> auth.add_resource_role(user, event.k, event.v)
-    'r-': (event, user) -> auth.remove_resource_role(user, event.k, event.v)
+  actions = validation.entries.users
 
-  vh.validate_audit_entries(actions, new_audit_entries, user_ctx, old_doc)
+  vh.validate_audit_entries(actions, new_audit_entries,
+                            user_ctx, old_doc, new_doc)
 
 module.exports = v

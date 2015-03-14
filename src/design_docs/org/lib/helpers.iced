@@ -1,4 +1,4 @@
-auth = require('./auth/auth')
+auth = require('./validation/validation').auth
 
 x = {}
 
@@ -37,8 +37,8 @@ x.add_team_perms = (original_team, user) ->
 
   for role_name in auth.roles.team
     x.mk_objs(team.roles, [role_name, 'perms'], {
-      add: auth.kratos.add_team_member(user, team, role_name)
-      remove: auth.kratos.remove_team_member(user, team, role_name)
+      add: auth.add_team_member(user, team, role_name)
+      remove: auth.remove_team_member(user, team, role_name)
     })
   return team
 

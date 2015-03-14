@@ -1,6 +1,6 @@
 h = require('lib/helpers')
 _ = require('lib/underscore')
-auth = require('./auth/auth')
+auth = require('./validation/validation').auth
 validation = require('lib/validation')
 
 module.exports = 
@@ -34,6 +34,7 @@ module.exports =
     contractors:
       map: (doc) ->
         emit(doc.data?.contractor or false, doc.username)
+
   lists:
     get_users: (header, req) ->
       out = []
@@ -50,6 +51,7 @@ module.exports =
         return JSON.stringify(doc)
       else
         throw(['error', 'not_found', 'document matching query does not exist'])
+
   shows:
     get_user: (doc, req) ->
       user = h.sanitize_user(doc)
@@ -100,6 +102,23 @@ module.exports =
         if _.isEqual(old_container, container)
           return [null, JSON.stringify(h.sanitize_user(user))]
 
+      else if action == 'u+'
+        container = user.roles
+        role = 'kratos|disabled'
+        if role in container
+          i = container.indexOf(role)
+          container.splice(i, 1)
+        else
+          return [null, JSON.stringify(h.sanitize_user(user))]
+
+      else if action == 'u-'
+        container = user.roles
+        role = 'kratos|disabled'
+        if [role] == container
+          return [null, JSON.stringify(h.sanitize_user(user))]
+        else
+          user.roles = [role]
+
       else
         return [null, '{"status": "error", "msg": "invalid action"}']
 
@@ -124,7 +143,7 @@ module.exports =
       from: "/users/:user_id",
       to: "/_show/get_user/:user_id",
       query: {},
-    }
+    },
   ]
   validate_doc_update: (newDoc, oldDoc, userCtx, secObj) ->
 

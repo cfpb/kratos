@@ -1,4 +1,5 @@
 _ = require('underscore')
+utils = require('../utils')
 couch_utils = require('../couch_utils')
 users = {}
 user_db = couch_utils.nano_admin.use('_users')
@@ -70,6 +71,29 @@ users.handle_add_data = (req, resp) ->
   }
   req.couch.use('_users').atomic('base', 'do_action', user, action).pipe(resp)
 
+users.reactivate_user = (client, user, callback) ->
+  action = {
+    action: 'u+'
+    uuid: uuid.v4()
+  }
+  return client.use('_users').atomic('base', 'do_action', user, action, callback)
+
+
+users.handle_reactivate_user = (req, resp) ->
+  user = 'org.couchdb.user:' + req.params.user_id
+  return users.reactivate_user(req.couch, user).pipe(resp)
+
+users.deactivate_user = (client, user, callback) ->
+  action = {
+    action: 'u-'
+    uuid: uuid.v4()
+  }
+  return client.use('_users').atomic('base', 'do_action', user, action, callback)
+
+users.handle_deactivate_user = (req, resp) ->
+  user = 'org.couchdb.user:' + req.params.user_id
+  return users.deactivate_user(req.couch, user).pipe(resp)
+
 users.handle_add_user = (req, resp) ->
   ###
   body must be a hash ({}).
@@ -106,5 +130,5 @@ users.handle_add_user = (req, resp) ->
     return users.get_user(name).pipe(resp)  
 
 
-
+utils.denodeify_api(users)
 module.exports = users

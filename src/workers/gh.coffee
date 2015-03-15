@@ -1,7 +1,7 @@
 _ = require('underscore')
 users = require('../api/users')
 teams_api = require('../api/teams')
-auth = require('../validation/validation').auth
+auth = require('../validation/validate').auth
 git = require('./gh_client')
 Promise = require('promise')
 

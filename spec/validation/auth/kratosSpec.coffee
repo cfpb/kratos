@@ -1,4 +1,4 @@
-auth = require('../../../lib/validation/validation').auth
+auth = require('../../../lib/validation/validate').auth
 kratos = auth.kratos
 
 super_admin   = {name: 'admin'}

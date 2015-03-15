@@ -2,7 +2,7 @@ git = require('../../lib/workers/gh_client')
 gh = require('../../lib/workers/gh')
 users = require('../../lib/api/users')
 teams = require('../../lib/api/teams')
-auth = require('../../lib/validation/validation').auth
+auth = require('../../lib/validation/validate').auth
 Promise = require('promise')
 
 describe 'add_user', () ->

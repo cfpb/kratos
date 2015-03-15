@@ -1,7 +1,11 @@
 _ = require('lib/underscore')
 h = require('lib/helpers')
-validation = require('lib/validation')
+validation = require('lib/validate')
+dd_methods = require('./shared_design_methods')
 
+exports.views =
+  audit_by_date: dd_methods.views.audit_by_date
+  audit_by_timestamp: dd_methods.views.audit_by_timestamp
 exports.lists =
   get_teams: (header, req) ->
     out = []
@@ -11,6 +15,7 @@ exports.lists =
       team = h.add_team_perms(doc, req.userCtx)
       out.push(team)
     return JSON.stringify(out)
+  get_values: dd_methods.lists.get_values
 
 exports.shows =
   get_team: (doc, req) ->
@@ -87,5 +92,6 @@ exports.rewrites = [
       from: "/teams/:team_id",
       to: "/_show/get_team/:team_id",
       query: {},
-    }
+    },
+    dd_methods.rewrites.audit,
 ]

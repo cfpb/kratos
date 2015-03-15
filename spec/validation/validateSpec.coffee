@@ -1,4 +1,4 @@
-v = require('../../lib/validation/validation')
+v = require('../../lib/validation/validate')
 validation = actual = v.validation
 auth = actual = v.auth
 

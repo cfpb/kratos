@@ -1,6 +1,6 @@
 couch_utils = require('./couch_utils')
 basic_auth = require('basic-auth')
-auth = require('./validation/validation').auth
+auth = require('./validation/validate').auth
 conf = require('./config')
 users = require('./api/users')
 

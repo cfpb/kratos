@@ -1,4 +1,4 @@
-validation = require('../../../lib/validation/validation').validation
+validation = require('../../../lib/validation/validate').validation
 
 super_admin         = {name: 'admin'}
 team_admin          = {name: 'etkdg394hpmujn', roles: []}

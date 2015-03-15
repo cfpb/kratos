@@ -1,4 +1,4 @@
-auth = require('./validation/validation').auth
+auth = require('./validation/validate').auth
 
 x = {}
 

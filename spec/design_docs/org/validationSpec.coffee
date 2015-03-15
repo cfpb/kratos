@@ -1,4 +1,4 @@
-validation = require('../../../lib/design_docs/org/lib/validation')
+validation = require('../../../lib/design_docs/org/lib/validate')
 _ = require('underscore')
 
 describe 'is_team', () ->

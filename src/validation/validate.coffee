@@ -60,5 +60,5 @@ if window?
   window.kratos = {validation: validation}
 else
   require('./auth/auth')(validation)
-  require('./validation/validation')(validation)
+  require('./val/val')(validation)
   module.exports = validation

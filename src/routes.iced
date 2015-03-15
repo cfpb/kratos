@@ -32,3 +32,5 @@ module.exports = (app) ->
     app.put('/kratos/users/:user_id/data/:path?*', users.handle_add_data)
     # get the current logged-in user
     app.get('/kratos/user', user.handle_get_user)
+
+    app.get('/kratos/audit', audit.handle_get_audit)

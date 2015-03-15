@@ -1,10 +1,13 @@
 h = require('lib/helpers')
 _ = require('lib/underscore')
-auth = require('./validation/validation').auth
-validation = require('lib/validation')
+auth = require('./validation/validate').auth
+validation = require('lib/validate')
+dd_methods = require('./shared_design_methods')
 
 module.exports = 
   views:
+    audit_by_date: dd_methods.views.audit_by_date
+    audit_by_timestamp: dd_methods.views.audit_by_timestamp
     by_resource_id:
       map: (doc) ->
         for resource_name, resource of doc.rsrcs
@@ -51,6 +54,7 @@ module.exports =
         return JSON.stringify(doc)
       else
         throw(['error', 'not_found', 'document matching query does not exist'])
+    get_values: dd_methods.lists.get_values
 
   shows:
     get_user: (doc, req) ->
@@ -144,6 +148,7 @@ module.exports =
       to: "/_show/get_user/:user_id",
       query: {},
     },
+    dd_methods.rewrites.audit,
   ]
   validate_doc_update: (newDoc, oldDoc, userCtx, secObj) ->
 

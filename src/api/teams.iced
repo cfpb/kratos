@@ -2,7 +2,6 @@ couch_utils = require('../couch_utils')
 utils = require('../utils')
 request = require('request')
 uuid = require('node-uuid')
-utils = require('../utils')
 _ = require('underscore')
 
 resources = {

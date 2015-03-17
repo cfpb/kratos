@@ -2,11 +2,11 @@ auth = require('../../../lib/validation/validate').auth
 gh = auth.gh
 
 super_admin   = {name: 'admin'}
-team_admin    = {name: 'etkdg394hpmujn', roles: []}
-team_gh_admin = {name: 'nauhbkuwmkjvqq', roles: ['gh|user']}
-user          = {name: 'thubsn24joa5gk', roles: []}
-kratos_admin  = {name: 'nahubk_hpb49km', roles: ['kratos|admin']}
-both_admin    = {name: 'ahbksexortixvi', roles: ['kratos|admin']}
+team_admin    = {name: 'etkdg394hpmujn', roles: ['kratos|enabled']}
+team_gh_admin = {name: 'nauhbkuwmkjvqq', roles: ['gh|user', 'kratos|enabled']}
+user          = {name: 'thubsn24joa5gk', roles: ['kratos|enabled']}
+kratos_admin  = {name: 'nahubk_hpb49km', roles: ['kratos|admin', 'kratos|enabled']}
+both_admin    = {name: 'ahbksexortixvi', roles: ['kratos|admin', 'kratos|enabled']}
 
 team         = {roles: {admin: {members: ['etkdg394hpmujn', 'ahbksexortixvi', 'nauhbkuwmkjvqq']}}}
 

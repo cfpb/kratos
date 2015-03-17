@@ -15,7 +15,8 @@
     "promise": "^6.1.0",
     "request": "2.49.0",
     "underscore": "1.7.0",
-    "underscore.string": "~3.0.3"
+    "underscore.string": "~3.0.3",
+    "pantheon-helpers": "git+https://github.com/dgreisen-cfpb/pantheon-helpers.git"
   },
   "devDependencies": {
     "vows": "0.5.x"

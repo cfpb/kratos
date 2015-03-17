@@ -1,10 +1,11 @@
 _ = require('underscore')
 utils = require('../utils')
 couch_utils = require('../couch_utils')
-users = {}
 user_db = couch_utils.nano_admin.use('_users')
 uuid = require('node-uuid')
 conf = require('../config')
+
+users = {}
 
 isInt = (s) ->
   return String(parseInt(s)) == s

@@ -1,6 +1,24 @@
 v = require('../../lib/validation/validate')
-validation = actual = v.validation
-auth = actual = v.auth
+validation = v.validation
+auth = v.auth
+
+describe '_is_team', () ->
+  it 'returns true when the document is a team', () ->
+    actual = v._is_team({_id: 'team_team_name'})
+    expect(actual).toBe(true)
+
+  it 'returns false when the document is not a team', () ->
+    actual = v._is_team({_id: '_design/base'})
+    expect(actual).toBe(false)
+
+describe '_is_user', () ->
+  it 'returns true when the document is a user', () ->
+    actual = v._is_user({_id: 'org.couchdb.user:06e6b8b013b0a60c83332bc86a02bdc6'})
+    expect(actual).toBe(true)
+
+  it 'returns false when the document is not a user', () ->
+    actual = v._is_user({_id: '_design/base'})
+    expect(actual).toBe(false)
 
 describe 'add_team', () ->
   it 'calls corresponding method in validation and auth', () ->

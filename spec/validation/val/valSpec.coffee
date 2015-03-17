@@ -1,13 +1,13 @@
 validation = require('../../../lib/validation/validate').validation
 
 super_admin         = {name: 'admin'}
-team_admin          = {name: 'etkdg394hpmujn', roles: []}
-team_gh_admin       = {name: 'nauhbkuwmkjvqq', roles: ['gh|user']}
-user                = {name: 'thubsn24joa5gk', roles: []}
-disabled_user       = {name: 'tbkuhdetmjenao', roles: ['kratos|disabled']}
-kratos_admin        = {name: 'nahubk_hpb49km', roles: ['kratos|admin']}
-both_admin          = {name: 'ahbksexortixvi', roles: ['kratos|admin']}
-disabled_both_admin = {name: 'jmhpduteuetojm', roles: ['kratos|admin', 'gh|user', 'kratos|disabled']}
+team_admin          = {name: 'etkdg394hpmujn', roles: ['kratos|enabled']}
+team_gh_admin       = {name: 'nauhbkuwmkjvqq', roles: ['gh|user', 'kratos|enabled']}
+user                = {name: 'thubsn24joa5gk', roles: ['kratos|enabled']}
+disabled_user       = {name: 'tbkuhdetmjenao', roles: []}
+kratos_admin        = {name: 'nahubk_hpb49km', roles: ['kratos|admin', 'kratos|enabled']}
+both_admin          = {name: 'ahbksexortixvi', roles: ['kratos|admin', 'kratos|enabled']}
+disabled_both_admin = {name: 'jmhpduteuetojm', roles: ['kratos|admin', 'gh|user']}
 team                = {roles: {admin: {members: ['etkdg394hpmujn', 'ahbksexortixvi', 'nauhbkuwmkjvqq', 'jmhpduteuetojm']}}}
 
 

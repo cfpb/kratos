@@ -1,10 +1,8 @@
 _ = require('underscore')
-request = require('request')
-utils = require('../utils')
 conf = require('../config')
 gh_conf = conf.RESOURCES.GH
 path = require('path')
-Promise = require('promise')
+Promise = require('pantheon-helpers/lib/promise')
 {exec} = require('child_process')
 exec = Promise.denodeify(exec)
 {mkdir} = require('fs')
@@ -13,17 +11,14 @@ mkdir = Promise.denodeify(mkdir)
 KRATOS_DIR = path.join(__dirname, '../..')
 TEMPLATE_DIR = path.join(KRATOS_DIR, './template_repo/')
 
-GIT_URL = 'https://api.github.com'
-
-git_client = request.defaults({
+git = Promise.RestClient({
+  url: 'https://api.github.com',
   auth: gh_conf.ADMIN_CREDENTIALS,
   headers: {
     'User-Agent': 'cfpb-kratos',
   },
   json: true,
 })
-
-git = utils.PromiseClient(git_client, 'https://api.github.com')
 
 get_authenticated_repo_url = (repo_url) ->
   repo_parts = repo_url.split('//')

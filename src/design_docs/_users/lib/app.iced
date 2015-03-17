@@ -1,13 +1,14 @@
-h = require('lib/helpers')
 _ = require('lib/underscore')
-auth = require('./validation/validate').auth
-validation = require('lib/validate')
-dd_methods = require('./shared_design_methods')
+h = require('./helpers')
+validation = require('lib/validation/validate')
+actions = require('./actions')
+audit = require('./shared/audit')
 
-module.exports = 
+
+auth = validation.auth
+
+dd = 
   views:
-    audit_by_date: dd_methods.views.audit_by_date
-    audit_by_timestamp: dd_methods.views.audit_by_timestamp
     by_resource_id:
       map: (doc) ->
         for resource_name, resource of doc.rsrcs
@@ -43,7 +44,7 @@ module.exports =
       out = []
       while(row = getRow())
         doc = row.doc
-        continue if not validation.is_user(doc)
+        continue if not validation._is_user(doc)
         doc = h.sanitize_user(doc)
         out.push(doc)
       return JSON.stringify(out)
@@ -54,87 +55,22 @@ module.exports =
         return JSON.stringify(doc)
       else
         throw(['error', 'not_found', 'document matching query does not exist'])
-    get_values: dd_methods.lists.get_values
 
   shows:
     get_user: (doc, req) ->
       user = h.sanitize_user(doc)
       user.perms = {
         team: {
-          add: auth.kratos.add_team(user)
-          remove: auth.kratos.remove_team(user)
+          add: auth.add_team(user)
+          remove: auth.remove_team(user)
         }
       }
       return {body: JSON.stringify(user), "headers" : {"Content-Type" : "application/json"}}
 
-  validate_doc_update: validation.validate_doc_update
+  validate_doc_update: actions.validate_doc_update
 
   updates:
-    do_action: (user, req) ->
-      if not user
-        return [null, '{"status": "error", "msg": "user not found"}']
-      body = JSON.parse(req.body)
-      value = body.value
-      action = body.action
-      key = body.key
-      acting_user = req.userCtx.name
-
-      if action == 'r+'
-        container = user.roles
-        role = key + '|' + value
-        if role in container
-          return [null, JSON.stringify(h.sanitize_user(user))]
-        else
-          container.push(role)
-
-      else if action == 'r-'
-        container = user.roles
-        role = key + '|' + value
-        if role in container
-          i = container.indexOf(role)
-          container.splice(i, 1)
-        else
-          return [null, JSON.stringify(h.sanitize_user(user))]
-
-      else if action == 'd+'
-        if not user.data
-          user.data = {}
-        container = user.data
-        old_container = JSON.parse(JSON.stringify(container)) # clone original to check if change
-        merge_target = h.mk_objs(container, key, {})
-        _.extend(merge_target, value)
-        if _.isEqual(old_container, container)
-          return [null, JSON.stringify(h.sanitize_user(user))]
-
-      else if action == 'u+'
-        container = user.roles
-        role = 'kratos|disabled'
-        if role in container
-          i = container.indexOf(role)
-          container.splice(i, 1)
-        else
-          return [null, JSON.stringify(h.sanitize_user(user))]
-
-      else if action == 'u-'
-        container = user.roles
-        role = 'kratos|disabled'
-        if [role] == container
-          return [null, JSON.stringify(h.sanitize_user(user))]
-        else
-          user.roles = [role]
-
-      else
-        return [null, '{"status": "error", "msg": "invalid action"}']
-
-      user.audit.push({
-        u: acting_user,
-        dt: +new Date(),
-        a: action,
-        k: key,
-        v: value,
-        id: body.uuid,
-      })
-      return [user, JSON.stringify(h.sanitize_user(user))]
+    do_action: actions.do_action
 
   rewrites: [
     {
@@ -148,7 +84,8 @@ module.exports =
       to: "/_show/get_user/:user_id",
       query: {},
     },
-    dd_methods.rewrites.audit,
   ]
-  validate_doc_update: (newDoc, oldDoc, userCtx, secObj) ->
 
+audit.mixin(dd)
+
+module.exports = dd

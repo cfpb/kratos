@@ -3,7 +3,7 @@ users = require('../api/users')
 teams_api = require('../api/teams')
 auth = require('../validation/validate').auth
 git = require('./gh_client')
-Promise = require('promise')
+Promise = require('pantheon-helpers/lib/promise')
 
 emptyResolve = () ->
   Promise.resolve()

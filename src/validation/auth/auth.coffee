@@ -1,8 +1,14 @@
 auth = (validation) ->
   validation.auth = auth = {}
 
+  auth.is_system_user = (user) ->
+    return user.name in ['admin']
+
+  auth.is_kratos_system_user = (user) ->
+    return user.name == 'admin'
+
   auth.is_active_user = (user) ->
-    return 'kratos|disabled' not in (user.roles or [])
+    return auth.is_system_user(user) or 'kratos|enabled' in (user.roles or [])
 
   auth._has_resource_role = (user, resource, role) ->
     return auth.is_active_user(user) and (resource + '|' + role) in (user.roles or [])

@@ -1,4 +1,16 @@
 validation =
+  _is_team: (doc) ->
+    return doc._id.indexOf('team_') == 0
+  _is_user: (doc) ->
+    return doc._id.indexOf('org.couchdb.user:') == 0
+  _get_doc_type: (doc) ->
+    if validation._is_team(doc)
+      return 'team'
+    else if validation._is_user(doc)
+      return 'user'
+    else
+      return
+
   add_team: (actor, team) ->
     return validation.auth.add_team(actor) &&
            validation.validation.add_team(team)
@@ -33,28 +45,6 @@ validation =
   remove_resource_role: (actor, user, resource, role) ->
     return validation.auth.remove_resource_role(actor, resource, role) &&
            validation.validation.remove_resource_role(user, resource, role)
-
-validation.entries =
-  teams:
-    't+': (event, actor, old_team, new_team) -> 
-            validation.add_team(actor, new_team)
-    'a+': (event, actor, old_team, new_team) -> 
-            validation.add_team_asset(actor, old_team, event.k, event.r)
-    'a-': (event, actor, old_team, new_team) -> 
-            validation.remove_team_asset(actor, old_team, event.k, event.r)
-    'u+': (event, actor, old_team, new_team) -> 
-            validation.add_team_member(actor, old_team, null, event.k)
-    'u-': (event, actor, old_team, new_team) -> 
-            validation.remove_team_member(actor, old_team, null, event.k)
-  users:
-    'r+': (event, actor, old_user, new_user) -> 
-            validation.add_resource_role(actor, new_user, event.k, event.v)
-    'r-': (event, actor, old_user, new_user) -> 
-            validation.remove_resource_role(actor, new_user, event.k, event.v)
-    'u+': (event, actor, old_user, new_user) -> 
-            validation.add_user(actor, old_user)
-    'u-': (event, actor, old_user, new_user) -> 
-            validation.remove_user(actor, user)
 
 if window?
   window.kratos = {validation: validation}

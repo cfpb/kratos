@@ -5,6 +5,7 @@ teams = require('../../lib/api/teams')
 auth = require('../../lib/validation/validate').auth
 Promise = require('promise')
 
+onError = (err) -> console.log('ERR!!', err)
 describe 'add_user', () ->
   beforeEach () ->
     this.user =
@@ -55,6 +56,18 @@ describe 'add_user', () ->
       done()
     )
 
+
+describe 'handle_add_user', () ->
+  it 'gets the user object and calls add_user', (done) ->
+    handle_add_user = gh.handlers.team['u+']
+    spyOn(users, 'pGet_user').andReturn(Promise.resolve('user_obj'))
+    spyOn(gh.testing, 'add_user').andReturn(Promise.resolve())
+
+    handle_add_user({v: 'userid', k: 'member'}, 'team').then(() ->
+      expect(users.pGet_user).toHaveBeenCalledWith('userid')
+      expect(gh.testing.add_user).toHaveBeenCalledWith('user_obj', 'member', 'team')
+      done()
+    ).catch(onError)
 
 describe 'remove_user', () ->
   beforeEach () ->
@@ -121,6 +134,18 @@ describe 'remove_user', () ->
       done()
     )
 
+describe 'handle_remove_user', () ->
+  it 'gets the user object and calls remove_user', (done) ->
+    handle_remove_user = gh.handlers.team['u-']
+    spyOn(users, 'pGet_user').andReturn(Promise.resolve('user_obj'))
+    spyOn(gh.testing, 'remove_user').andReturn(Promise.resolve())
+
+    handle_remove_user({v: 'userid', k: 'member'}, 'team').then(() ->
+      expect(users.pGet_user).toHaveBeenCalledWith('userid')
+      expect(gh.testing.remove_user).toHaveBeenCalledWith('user_obj', 'member', 'team')
+      done()
+    ).catch(onError)
+
 describe 'remove_repo', () ->
   it 'removes a repo from all github teams corresponding to a given team', (done) ->
     team =
@@ -135,6 +160,16 @@ describe 'remove_repo', () ->
       expect(resp).toBeUndefined()
       done()
     )
+
+describe 'handle_remove_repo', () ->
+  it 'calls remove_repo', (done) ->
+    handle_remove_repo = gh.handlers.team.self['a-']
+    spyOn(gh.testing, 'remove_repo').andReturn(Promise.resolve())
+
+    handle_remove_repo({r: {full_name: 'reponame'}}, 'team').then(() ->
+      expect(gh.testing.remove_repo).toHaveBeenCalledWith('reponame', 'team')
+      done()
+    ).catch(onError)
 
 describe 'create_team', () ->
   it 'creates github admin and push teams for the created kratos team; returns a {perm: team_id} hash', (done) ->

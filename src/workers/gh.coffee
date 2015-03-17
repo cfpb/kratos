@@ -5,6 +5,8 @@ auth = require('../validation/validate').auth
 git = require('./gh_client')
 Promise = require('pantheon-helpers/lib/promise')
 
+gh = {}
+
 emptyResolve = () ->
   Promise.resolve()
 
@@ -39,7 +41,7 @@ has_gh_team_membership_through_other_role = (team, user, role) ->
       return true
   return false
 
-add_user = (user, role, team) ->
+gh.add_user = (user, role, team) ->
   if not auth._has_resource_role(user, 'gh', 'user')
     return Promise.resolve()
 
@@ -48,7 +50,7 @@ add_user = (user, role, team) ->
     git.team.user.add(gh_team_id, gh_username).then(emptyResolve)
   )
 
-remove_user = (user, role, team) ->
+gh.remove_user = (user, role, team) ->
   if has_gh_team_membership_through_other_role(team, user, role)
     return Promise.resolve()
 
@@ -62,7 +64,7 @@ handle_add_user = (event, team) ->
   role = event.k
 
   users.pGet_user(user_id).then((user) ->
-    add_user(user, role, action_name, team)
+    gh.add_user(user, role, team)
   )
 
 handle_remove_user = (event, team) ->
@@ -70,18 +72,18 @@ handle_remove_user = (event, team) ->
   role = event.k
 
   users.pGet_user(user_id).then((user) ->
-    remove_user(user, role, action_name, team)
+    gh.remove_user(user, role, team)
   )
 
-remove_repo = (repo_full_name, team) ->
+gh.remove_repo = (repo_full_name, team) ->
   team_ids = _.values(team.rsrcs.gh?.data or {})
   git.teams.repo.remove(team_ids, repo_full_name).then(emptyResolve)
 
 handle_remove_repo = (event, team) ->
   repo_full_name = event.r.full_name
-  return remove_repo(repo_full_name, team)
+  return gh.remove_repo(repo_full_name, team)
 
-create_team = (team_name) ->
+gh.create_team = (team_name) ->
   opts = [
     { name: team_name, permission: 'admin'},
     { name: team_name, permission: 'push'},
@@ -92,7 +94,7 @@ create_team = (team_name) ->
   )
 
 handle_create_team = (event, team) ->
-  return create_team(team.name)
+  return gh.create_team(team.name)
 
 get_gh_team_ids = (user) ->
   teams_api.pGetTeamRolesForUser(user).then((team_roles) ->
@@ -165,9 +167,5 @@ module.exports =
       'u+': null
       'u-': handle_deactivate_user
   add_asset: add_asset
-  testing:
-    add_user: add_user
-    remove_user: remove_user
-    remove_repo: remove_repo
-    create_team: create_team
+  testing: gh
 

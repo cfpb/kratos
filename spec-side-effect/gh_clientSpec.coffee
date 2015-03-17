@@ -39,6 +39,9 @@ onSuccess = (done) ->
   return handle("SUCCESS", done)
 
 reset_org = (callback) ->
+  if gh_conf.ORG_NAME.indexOf('-test') < 0
+    throw Error('DANGER: ORG_NAME is set to "' + gh_conf.ORG_NAME + '". This may indicate a problem with the test harness that could lead to data loss')
+
   Promise.all([
     git.get_all('organizations/' + gh_conf.ORG_ID + '/repos'),
     git.get_all('organizations/' + gh_conf.ORG_ID + '/teams'),
@@ -215,12 +218,14 @@ xdescribe 'team_repo_remove', () ->
     ).catch(onError(done))
 
 describe 'teams_create', () ->
+  beforeEach (done) ->
+    reset_org(done)
+
   it 'creates teams from the passed array of opts', (done) ->
     gh.teams.create([
       {name: 'test', permission: 'admin'},
       {name: 'test', permission: 'push'}
     ]).then((resps) ->
-      console.log(resps)
       Promise.all([
         git.get(resps[0].url),
         git.get(resps[1].url)

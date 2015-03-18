@@ -2,6 +2,9 @@
   "name": "kratos",
   "description": "Enterprise Authorization Enforcement",
   "author": "David Greisen <david.greisen@cfpb.gov",
+  "scripts": {
+    "test": "icake test"
+  },
   "dependencies": {
     "basic-auth": "1.0.0",
     "body-parser": "1.10.0",

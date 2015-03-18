@@ -108,15 +108,15 @@ handle_add_gh_rsrc_role = (event, user) ->
   get_gh_username(user).then((gh_username) ->
     get_gh_team_ids(user).then((gh_team_ids) ->
       git.teams.user.add(gh_team_ids, gh_username)
-    ).then(emptyResolve)
-  )
+    )
+  ).then(emptyResolve)
 
 handle_remove_gh_rsrc_role = (event, user) ->
   get_gh_username(user).then((gh_username) ->
     get_gh_team_ids(user).then((gh_team_ids) ->
       git.teams.user.remove(gh_team_ids, gh_username)
-    ).then(emptyResolve)
-  )
+    )
+  ).then(emptyResolve)
 
 handle_deactivate_user = (event, user) ->
   get_gh_username(user).then(

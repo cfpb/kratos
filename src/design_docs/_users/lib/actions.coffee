@@ -43,7 +43,6 @@ a.do_action = do_action(a.do_actions,
 a.validate_doc_update = validate_doc_update(
                           a.validate_actions,
                           validate._get_doc_type,
-                          validate.auth.is_system_user
                         )
 
 module.exports = a

@@ -20,6 +20,47 @@ describe '_is_user', () ->
     actual = v._is_user({_id: '_design/base'})
     expect(actual).toBe(false)
 
+describe '_validate', () ->
+  beforeEach () ->
+
+  it 'calls the auth and validation "fn_name" functions specified by path with the auth and val args specified', () ->
+    spyOn(validation, 'add_team').andReturn(true)
+    spyOn(auth, 'add_team').andReturn(true)
+    
+    v._validate('add_team', ['actor'], ['team'])
+    expect(auth.add_team).toHaveBeenCalledWith('actor')
+    expect(validation.add_team).toHaveBeenCalledWith('team')
+
+  it 'throws an auth error if authorization fails', () ->
+    spyOn(validation, 'add_team').andReturn(true)
+    spyOn(auth, 'add_team').andReturn(false)
+  
+    expect(() =>
+      v._validate('add_team', ['actor'], ['team'])
+      expect(auth.add_team).toHaveBeenCalledWith('actor')
+      expect(validation.add_team).toHaveBeenCalledWith('team')
+    ).toThrow({state: 'unauthorized', err: 'You do not have the privileges necessary to perform the action.'})
+
+  it "throws a validation error with the validation fn's validation error if validation fails", () ->
+    spyOn(validation, 'add_team').andCallFake(() -> throw("it's an error"))
+    spyOn(auth, 'add_team').andReturn(true)
+  
+    expect(() =>
+      v._validate('add_team', ['actor'], ['team'])
+      expect(auth.add_team).toHaveBeenCalledWith('actor')
+      expect(validation.add_team).toHaveBeenCalledWith('team')
+    ).toThrow({state: 'invalid', err: "it's an error"})
+
+  it "stringifies the fn's validation error if not already a string", () ->
+    spyOn(validation, 'add_team').andCallFake(() -> throw({e: "it is an error"}))
+    spyOn(auth, 'add_team').andReturn(true)
+
+    expect(() =>
+      v._validate('add_team', ['actor'], ['team'])
+      expect(auth.add_team).toHaveBeenCalledWith('actor')
+      expect(validation.add_team).toHaveBeenCalledWith('team')
+    ).toThrow({state: 'invalid', err: '{"e":"it is an error"}'})
+
 describe 'add_team', () ->
   it 'calls corresponding method in validation and auth', () ->
     spyOn(validation, 'add_team').andReturn(true)

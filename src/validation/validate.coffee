@@ -11,6 +11,18 @@ validation =
     else
       return
 
+  _validate: (fn_name, auth_args, val_args) ->
+    authorized = validation.auth[fn_name].apply(null, auth_args)
+    if not authorized
+      throw({state: 'unauthorized', err: 'You do not have the privileges necessary to perform the action.'})
+
+    try
+      validation.validation[fn_name].apply(null, val_args)
+    catch e
+      if typeof e != 'string'
+        e = JSON.stringify(e)
+      throw({state: 'invalid', err: e})
+
   add_team: (actor, team) ->
     return validation.auth.add_team(actor) &&
            validation.validation.add_team(team)

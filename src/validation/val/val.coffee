@@ -2,34 +2,32 @@ validation = (validation) ->
   auth = validation.auth
   validation.validation =
     add_team: (team) ->
-      return true
     remove_team: (team) ->
-      return true
 
     add_team_asset: (team, resource, asset) ->
-      return validation.validation[resource]?.add_team_asset?(team, asset) or false
+      if not validation.validation[resource]?.add_team_asset?
+        throw('resource, ' + resource + ', does not support adding assets')
+      return validation.validation[resource].add_team_asset(team, asset)
     remove_team_asset: (team, resource, asset) ->
-      return validation.validation[resource]?.remove_team_asset?(team, asset) or false
+      if not validation.validation[resource]?.remove_team_asset?
+        throw('resource, ' + resource + ', does not support removing assets')
+      return validation.validation[resource].remove_team_asset(team, asset)
 
     add_team_member: (team, user, role) ->
-      if role in auth.roles.team_admin or
-         role in auth.roles.team
-        return true
-      else
-        return false
+      if role not in auth.roles.team_admin and
+         role not in auth.roles.team
+        throw('invalid role: ' + role)
     remove_team_member: (team, user, role) ->
-      return true
 
     add_user: (user) ->
-      return true
     remove_user: (user) ->
-      return true
 
     add_resource_role: (user, resource, role) ->
-      return auth.is_active_user(user) and
-             role in (auth.roles.resource[resource] or [])
+      if not auth.is_active_user(user)
+        throw('invalid user: ' + user.name)
+      if role not in (auth.roles.resource[resource] or [])
+        throw('invalid role: ' + role)
     remove_resource_role: (user, resource, role) ->
-      return true
 
   if not window?
     require('./gh')(validation.validation)

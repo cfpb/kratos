@@ -8,14 +8,25 @@ auth = (validation) ->
     return user.name == 'admin'
 
   auth.is_active_user = (user) ->
-    return auth.is_system_user(user) or 'kratos|enabled' in (user.roles or [])
+    return auth.is_system_user(user) or
+           'kratos|enabled' in (user.roles or [])
 
   auth._has_resource_role = (user, resource, role) ->
-    return auth.is_active_user(user) and (resource + '|' + role) in (user.roles or [])
+    console.log(user, resource, role)
+    console.log(auth.is_active_user(user))
+    return auth.is_active_user(user) and 
+           (
+             auth.is_system_user(user) or
+             (resource + '|' + role) in (user.roles or [])
+           )
 
   auth._has_team_role = (user, team, role) ->
     user_id = user.name
-    return auth.is_active_user(user) and user_id in (team.roles[role]?.members or [])
+    return auth.is_active_user(user) and 
+           (
+             auth.is_system_user(user) or
+             user_id in (team.roles[role]?.members or [])
+           )
 
   auth._is_resource_admin = (user, resource) ->
     return auth._has_resource_role(user, resource, 'admin')

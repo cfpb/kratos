@@ -59,7 +59,7 @@ reset_org = (callback) ->
 
 jasmine.getEnv().defaultTimeoutInterval = 50000
 
-xdescribe 'team_create', () ->
+describe 'team_create', () ->
   beforeEach (done) ->
     return reset_org(done)
   it 'creates a github team given a kratos name and a permission', (done) ->
@@ -75,7 +75,7 @@ xdescribe 'team_create', () ->
       done()
     ).catch(onError(done))
 
-xdescribe 'team_delete', () ->
+describe 'team_delete', () ->
   beforeEach (done) ->
     return reset_org(done)
   it 'deletes a github team given a github team id', (done) ->
@@ -93,7 +93,7 @@ xdescribe 'team_delete', () ->
       done()
     ).catch(onError(done))
 
-xdescribe 'team_user_add', () ->
+describe 'team_user_add', () ->
   team_id = null
   beforeEach (done) ->
     return reset_org().then(() ->
@@ -121,7 +121,7 @@ xdescribe 'team_user_add', () ->
       done()
     ).catch(onError(done))
 
-xdescribe 'team_user_remove', () ->
+describe 'team_user_remove', () ->
   team_id = null
   beforeEach (done) ->
     return reset_org().then(() ->
@@ -149,7 +149,7 @@ xdescribe 'team_user_remove', () ->
       )
     ).catch(onError(done))
 
-xdescribe 'team_repo_add', () ->
+describe 'team_repo_add', () ->
   team_id = null
   repo_full_name = null
   beforeEach (done) ->
@@ -182,7 +182,7 @@ xdescribe 'team_repo_add', () ->
       done()
     ).catch(onError(done))
 
-xdescribe 'team_repo_remove', () ->
+describe 'team_repo_remove', () ->
   team_id = null
   repo_full_name = null
   beforeEach (done) ->
@@ -350,7 +350,7 @@ describe 'teams_repo_remove', () ->
     ).catch(onError(done))
 
 
-xdescribe 'user_delete', () ->
+describe 'user_delete', () ->
   beforeEach (done) ->
     reset_org(done)
 
@@ -367,7 +367,7 @@ xdescribe 'user_delete', () ->
     ).catch(onError(done))
 
 
-xdescribe 'repo_create', () ->
+describe 'repo_create', () ->
   beforeEach (done) ->
     reset_org(done)
 
@@ -385,7 +385,7 @@ xdescribe 'repo_create', () ->
       )
     ).catch(onError(done))
 
-xdescribe 'repo_pushTemplate', () ->
+describe 'repo_pushTemplate', () ->
   repo_data = null
   beforeEach (done) ->
     return reset_org().then(() ->

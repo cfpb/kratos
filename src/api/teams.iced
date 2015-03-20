@@ -52,7 +52,7 @@ teams.get_all_teams = (callback) ->
   resps = []
   await
     for org_id, i in org_ids
-      org_db = couch_utils.nano_admin.use(org_id)
+      org_db = couch_utils.nano_system_user.use(org_id)
       teams.get_teams(org_db, defer(errs[i], resps[i]))
   errs = _.compact(errs)
   if errs.length then return callback(errs)

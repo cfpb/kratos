@@ -36,7 +36,7 @@ x.get_org_dbs = (callback) ->
   ###
   return all organization databases
   ###
-  await couch_utils.nano_admin.db.list(defer(err, dbs))
+  await couch_utils.nano_system_user.db.list(defer(err, dbs))
   if err then return callback(err)
   out = _.filter(dbs, (x) -> x.indexOf('org_') == 0)
   return callback(null, out)

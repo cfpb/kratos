@@ -19,7 +19,7 @@ get_handler_data_path = (doc_type, rsrc) ->
 
 # org workers
 for org in orgs
-  db = couch_utils.nano_admin.use('org_' + org)
+  db = couch_utils.nano_system_user.use('org_' + org)
   worker.start_worker(db,
                       handlers,
                       get_handler_data_path,
@@ -28,7 +28,7 @@ for org in orgs
 
 
 # _users worker
-db = couch_utils.nano_admin.use('_users')
+db = couch_utils.nano_system_user.use('_users')
 worker.start_worker(db,
                     handlers,
                     get_handler_data_path,

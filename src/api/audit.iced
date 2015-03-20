@@ -15,8 +15,8 @@ audit.get_audit = (start_date, end_date, callback) ->
     opts.qs.startkey = start_date
   if end_date? and not isNaN(end_date)
     opts.qs.endkey = end_date
-  dbs = orgs.map((org) -> couch_utils.nano_admin.use('org_' + org))
-  dbs.push(couch_utils.nano_admin.use('_users'))
+  dbs = orgs.map((org) -> couch_utils.nano_system_user.use('org_' + org))
+  dbs.push(couch_utils.nano_system_user.use('_users'))
   errs = []
   resps = []
   await

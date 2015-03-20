@@ -1,7 +1,7 @@
 _ = require('underscore')
 utils = require('../utils')
 couch_utils = require('../couch_utils')
-user_db = couch_utils.nano_admin.use('_users')
+user_db = couch_utils.nano_system_user.use('_users')
 uuid = require('node-uuid')
 conf = require('../config')
 

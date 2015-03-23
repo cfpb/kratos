@@ -1,82 +1,33 @@
-_ = require('lib/underscore')
-h = require('lib/helpers')
-validation = require('lib/validation')
+_ = require('./underscore')
+h = require('./helpers')
+validation = require('./validation/validate')
+actions = require('./actions')
+audit = require('./shared/audit')
 
-exports.lists =
-  get_teams: (header, req) ->
-    out = []
-    while(row = getRow())
-      doc = row.doc
-      continue if not validation.is_team(doc)
+dd =
+  views: {}
+
+  lists:
+    get_teams: (header, req) ->
+      out = []
+      while(row = getRow())
+        doc = row.doc
+        continue if not validation._is_team(doc)
+        team = h.add_team_perms(doc, req.userCtx)
+        out.push(team)
+      return JSON.stringify(out)
+
+  shows:
+    get_team: (doc, req) ->
       team = h.add_team_perms(doc, req.userCtx)
-      out.push(team)
-    return JSON.stringify(out)
+      return {body: JSON.stringify(team), "headers" : {"Content-Type" : "application/json"}}
 
-exports.shows =
-  get_team: (doc, req) ->
-    team = h.add_team_perms(doc, req.userCtx)
-    return {body: JSON.stringify(team), "headers" : {"Content-Type" : "application/json"}}
+  validate_doc_update: actions.validate_doc_update
 
-exports.validate_doc_update = validation.validate_doc_update
+  updates:
+    do_action: actions.do_action
 
-exports.updates =
-  do_action: (team, req) ->
-    if not team
-      return [null, '{"status": "error", "msg": "team not found"}']
-    body = JSON.parse(req.body)
-    value = body.value
-    action = body.action
-    key = body.key
-
-    if action == 'u+'
-      container = h.mk_objs(team.roles, [key, 'members'], [])
-      if value in container
-        return [null, JSON.stringify(h.add_team_perms(team, req.userCtx))]
-      else
-        container.push(value)
-
-    else if action == 'u-'
-      container = h.mk_objs(team.roles, [key, 'members'], [])
-      if value not in container
-        return [null, JSON.stringify(h.add_team_perms(team, req.userCtx))]
-      else
-        i = container.indexOf(value)
-        container.splice(i, 1)
-
-    else if action == 'a+'
-      container = h.mk_objs(team.rsrcs, [key, 'assets'], [])
-      item = _.find(container, (item) -> (item.id and (item.id==value.id or String(item.id)==value.id)) or (item.new and item.new==value.new))
-      if item
-        return [null, JSON.stringify(h.add_team_perms(team, req.userCtx))]
-      else
-        container.push(value)
-
-    else if action == 'a-'
-      container = h.mk_objs(team.rsrcs, [key, 'assets'], [])
-      item = _.find(container, (item) -> item.id==value or String(item.id)==value)
-      if not item
-        return [null, JSON.stringify(h.add_team_perms(team, req.userCtx))]
-      else
-        i = container.indexOf(item)
-        record = container.splice(i, 1)[0]
-
-    else
-      return [null, '{"status": "error", "msg": "invalid action"}']
-
-    entry = {
-      u: req.userCtx.name,
-      dt: +new Date(),
-      a: action,
-      k: key,
-      v: value,
-      id: body.uuid,
-    }
-    if record?
-      entry.r = record
-    team.audit.push(entry)
-    return [team, JSON.stringify(h.add_team_perms(team, req.userCtx))]
-
-exports.rewrites = [
+  rewrites: [
     {
       from: "/teams",
       to: "/_list/get_teams/_all_docs",
@@ -88,4 +39,8 @@ exports.rewrites = [
       to: "/_show/get_team/:team_id",
       query: {},
     }
-]
+  ]
+
+audit.mixin(dd)
+
+module.exports = dd

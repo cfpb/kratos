@@ -1,40 +1,25 @@
 _ = require('underscore')
+s = require('underscore.string')
 couch_utils = require('./couch_utils')
+Promise = require('promise')
 
 x = {}
 
-x.mk_objs = (obj, path_array, val={}) ->
-  ###
-  make a set of nested object.
+x.denodeify_all = (obj) ->
+  out = {}
+  for k, v of obj
+    if _.isFunction(v)
+      out[k] = Promise.denodeify(v)
+    else if _.isObject(v) and not _.isArray(v)
+      out[k] = x.denodeify_all(v)
 
-  obj = {'x': 1}
-  mk_objs(obj, ['a', 'b'], ['1'])
-  # returns []
-  # obj now equals {'x': 1, 'a': {'b': ['1']}}
-
-  return the val
-  ###
-  last_key = path_array.pop()
-  for key in path_array
-    if not obj[key]?
-      obj[key] = {}
-    obj = obj[key]
-  if not obj[last_key]
-    obj[last_key] = val
-  return obj[last_key]
-
-# x.deep_merge = (obj1, obj2) ->
-
-
-x.process_resp = (callback) ->
-  ###
-  process a request HTTP response. return a standardized
-  error regardless of whether there was a transport error or a server error
-  ###
-  (err, resp, body) ->
-    if err or resp.statusCode > 400
-      err = {err: err, msg: body, code: resp?.statusCode}
-    callback(err, resp, body)
+x.denodeify_api = (obj) ->
+  for k, v of obj
+    if _.isFunction(v) and not s.startsWith(k, 'handle')
+      pName = 'p' + s.capitalize(k)
+      obj[pName] = Promise.denodeify(v)
+    else if _.isObject(v) and not _.isArray(v)
+      x.denodeify_api(v)
 
 x.compact_hash = (hash) ->
   ###

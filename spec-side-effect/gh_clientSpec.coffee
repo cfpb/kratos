@@ -57,7 +57,7 @@ reset_org = (callback) ->
     console.log('ERROR!!', err)
   )
 
-jasmine.getEnv().defaultTimeoutInterval = 50000
+jasmine.getEnv().defaultTimeoutInterval = 5000
 
 describe 'team_create', () ->
   beforeEach (done) ->
@@ -370,9 +370,9 @@ describe 'user_delete', () ->
 describe 'repo_create', () ->
   beforeEach (done) ->
     reset_org(done)
-
   it 'creates the repo if it does not exist, and returns repo details', (done) ->
     gh.repo.create({name: 'test'}).then((resp) ->
+      console.log('resp', resp)
       expect(resp.name).toEqual('test')
       done()
     ).catch(onError(done))
@@ -380,6 +380,7 @@ describe 'repo_create', () ->
   it 'returns repo details if it already exists', (done) ->
     gh.repo.create({name: 'test'}).then((resp) ->
       gh.repo.create({name: 'test'}).then((resp) ->
+        console.log('test', resp)
         expect(resp.name).toEqual('test')
         done()
       )

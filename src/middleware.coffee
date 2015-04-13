@@ -14,7 +14,6 @@ module.exports =
     credentials = basic_auth(req);
     if credentials and credentials.name == 'admin' and credentials.pass = conf.COUCH_PWD
         req.session.user = 'admin'
-
     # add to the request a couch client tied to the logged in user
     req.couch = couch_utils.nano_user(req.session.user)
 
@@ -25,11 +24,11 @@ module.exports =
     if not req.session.user
       return resp.status(401).end(JSON.stringify({error: "unauthorized", msg: "You are not logged in."}))
 
-    await users.get_user(req.session.user, defer(err, user))
-    if err
+    users.get_user(req.session.user, 'promise').then((user) ->
+      if not auth.is_active_user(user)
+        return resp.status(401).end(JSON.stringify({error: "unauthorized", msg: "You are not logged in."}))
+      else
+        return next()      
+    (err) ->
       return resp.status(401).end(JSON.stringify({error: req.session.user, msg: err}))
-
-    if not auth.is_active_user(user)
-      return resp.status(401).end(JSON.stringify({error: "unauthorized", msg: "You are not logged in."}))
-
-    return next()
+    )

@@ -12,8 +12,6 @@ auth = (validation) ->
            'kratos|enabled' in (user.roles or [])
 
   auth._has_resource_role = (user, resource, role) ->
-    console.log(user, resource, role)
-    console.log(auth.is_active_user(user))
     return auth.is_active_user(user) and 
            (
              auth.is_system_user(user) or

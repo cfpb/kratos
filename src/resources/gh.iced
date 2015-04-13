@@ -1,5 +1,6 @@
 conf = require('../config')
-gh_conf = conf.RESOURCES.GH
+
+gh_conf = conf.RESOURCES.G
 request = require('request')
 parse_links = require('parse-links')
 couch_utils = require('../couch_utils')
@@ -61,7 +62,6 @@ x.import_teams = (db_name, admin_id, callback) ->
   teams = {}
   for raw_team in raw_teams
     if raw_team.id in gh_conf.UNMANAGED_TEAMS
-      console.log('skipping', raw_team.id)
       continue
     [name, typ, perm] = raw_team.name.split(' ')
     raw_team.perm = perm

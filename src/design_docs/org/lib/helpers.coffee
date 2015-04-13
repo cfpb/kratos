@@ -12,13 +12,13 @@ h.add_team_perms = (original_team, user) ->
   team = JSON.parse(JSON.stringify(original_team)) # deep cloning team
   for rsrc_name in auth.resources
     rsrc_auth = auth[rsrc_name]
-    perms = x.mk_objs(team.rsrcs, [rsrc_name, 'perms'], {
+    perms = h.mk_objs(team.rsrcs, [rsrc_name, 'perms'], {
       add: rsrc_auth.add_team_asset(user, team)
       remove: rsrc_auth.remove_team_asset(user, team)
     })
 
   for role_name in auth.roles.team
-    x.mk_objs(team.roles, [role_name, 'perms'], {
+    h.mk_objs(team.roles, [role_name, 'perms'], {
       add: auth.add_team_member(user, team, role_name)
       remove: auth.remove_team_member(user, team, role_name)
     })

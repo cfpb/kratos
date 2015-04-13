@@ -1,9 +1,9 @@
 _ = require('underscore')
 users = require('../api/users')
-teams_api = require('../api/teams')
 auth = require('../validation/validate').auth
 git = require('./gh_client')
 Promise = require('pantheon-helpers/lib/promise')
+teams_api = require('../api/teams')
 
 gh = {}
 
@@ -44,10 +44,9 @@ has_gh_team_membership_through_other_role = (team, user, role) ->
 gh.add_user = (user, role, team) ->
   if not auth._has_resource_role(user, 'gh', 'user')
     return Promise.resolve()
-
   get_gh_username(user).then((gh_username) ->
     gh_team_id = get_gh_team_id(team, user, role)
-    git.team.user.add(gh_team_id, gh_username).then(emptyResolve)
+    git.team.user.add(gh_team_id, gh_username)
   )
 
 gh.remove_user = (user, role, team) ->
@@ -56,32 +55,41 @@ gh.remove_user = (user, role, team) ->
 
   get_gh_username(user).then((gh_username) ->
     gh_team_id = get_gh_team_id(team, user, role)
-    git.team.user.remove(gh_team_id, gh_username).then(emptyResolve)
+    git.team.user.remove(gh_team_id, gh_username)
   )
 
 handle_add_user = (event, team) ->
-  user_id = event.v
-  role = event.k
+  user_id = event.user
+  role = event.role
 
-  users.pGet_user(user_id).then((user) ->
+  users.get_user(user_id, 'promise').then((user) ->
     gh.add_user(user, role, team)
-  )
+  ).then(emptyResolve)
 
 handle_remove_user = (event, team) ->
-  user_id = event.v
-  role = event.k
+  user_id = event.user
+  role = event.role
 
-  users.pGet_user(user_id).then((user) ->
+  users.get_user(user_id, 'promise').then((user) ->
     gh.remove_user(user, role, team)
-  )
+  ).then(emptyResolve)
 
 gh.remove_repo = (repo_full_name, team) ->
   team_ids = _.values(team.rsrcs.gh?.data or {})
-  git.teams.repo.remove(team_ids, repo_full_name).then(emptyResolve)
+  git.teams.repo.remove(team_ids, repo_full_name)
 
 handle_remove_repo = (event, team) ->
-  repo_full_name = event.r.full_name
-  return gh.remove_repo(repo_full_name, team)
+  repo_full_name = event.asset.full_name
+  return gh.remove_repo(repo_full_name, team).then(emptyResolve)
+
+gh.add_repo = (repo_full_name, team) ->
+  team_ids = _.values(team.rsrcs.gh?.data or {})
+  git.teams.repo.add(team_ids, repo_full_name)
+
+handle_add_repo = (event, team) ->
+  repo_full_name = event.asset.full_name
+  return gh.add_repo(repo_full_name, team).then(emptyResolve)
+
 
 gh.create_team = (team_name) ->
   opts = [
@@ -94,10 +102,12 @@ gh.create_team = (team_name) ->
   )
 
 handle_create_team = (event, team) ->
-  return gh.create_team(team.name)
+  return gh.create_team(team.name).then((data) ->
+    Promise.resolve({data: data, path: ['rsrcs', 'gh', 'data']})
+  )
 
 get_gh_team_ids = (user) ->
-  teams_api.pGetTeamRolesForUser(user).then((team_roles) ->
+  teams_api.get_all_team_roles_for_user(user).then((team_roles) ->
     gh_team_ids = team_roles.map((team_role) ->
       return get_gh_team_id(team_role.team, user, team_role.role)
     )
@@ -126,7 +136,8 @@ handle_deactivate_user = (event, user) ->
       Promise.resolve()
   ).then(emptyResolve)
 
-add_asset = (repo_name, team) ->
+add_asset = (asset_data, team) ->
+  repo_name = asset_data.new
   # first look through and make sure the repo hasn't already been added
   existing_repo = _.findWhere(team.rsrcs.gh?.assets, {'name': repo_name})
   if existing_repo
@@ -138,10 +149,7 @@ add_asset = (repo_name, team) ->
       name: new_repo_data.name,
       full_name: new_repo_data.full_name,
     }
-    team_ids = _.values(team.rsrcs.gh?.data or {})
-    git.teams.repo.add(team_ids, new_repo.full_name).then(() ->
-      Promise.resolve(new_repo)
-    )
+    Promise.resolve(new_repo)
   )
 
 module.exports =
@@ -152,7 +160,7 @@ module.exports =
       't+': handle_create_team
       't-': null
       self:
-        'a+': null
+        'a+': handle_add_repo
         'a-': handle_remove_repo
       other:
         'a+': null
@@ -168,4 +176,3 @@ module.exports =
       'u-': handle_deactivate_user
   add_asset: add_asset
   testing: gh
-

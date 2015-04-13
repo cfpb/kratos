@@ -7,11 +7,11 @@ describe 'team_u+', () ->
   beforeEach () ->
     this.action = {
       a: 'u+',
-      k: 'admin',
-      v: 'user1',
+      role: 'admin',
+      user: 'user1',
     }
     this.team = {_id: 'team_test', roles: {}, audit: []}
-    
+
 
   it 'adds the user to the role, if not already there', () ->
     a.do_actions.team['u+'](this.team, this.action, actor)
@@ -27,8 +27,8 @@ describe 'team_u-', () ->
   beforeEach () ->
     this.action = {
       a: 'u-',
-      k: 'admin',
-      v: 'user1',
+      role: 'admin',
+      user: 'user1',
     }
     this.team = {_id: 'team_test', roles: {admin: {members: ['user1', 'user2']}}, audit: []}
     
@@ -47,37 +47,38 @@ describe 'team_a+', () ->
   beforeEach () ->
     this.action = {
       a: 'a+',
-      k: 'gh',
-      v: 'asset1',
+      resource: 'gh',
+      id: 'asset1'
+      asset: {name: 'asset1name'},
     }
     this.team = {_id: 'team_test', rsrcs: {}, audit: []}
 
-
   it 'adds the asset to the team, if not already there', () ->
     a.do_actions.team['a+'](this.team, this.action, actor)
-    expect(this.team.rsrcs.gh.assets).toEqual(['asset1'])
+    expect(this.team.rsrcs.gh.assets).toEqual([{id: 'asset1', name: 'asset1name'}])
 
   it 'does not add the asset if it already belongs to team', () ->
-    h.mk_objs(this.team.rsrcs, ['gh','assets'], ['asset1', 'asset3'])
+    h.mk_objs(this.team.rsrcs, ['gh','assets'], [{id: 'asset1'}, {id: 'asset3'}])
 
     a.do_actions.team['a+'](this.team, this.action, actor)
-    expect(this.team.rsrcs.gh.assets).toEqual(['asset1', 'asset3'])
+    expect(this.team.rsrcs.gh.assets).toEqual([{id: 'asset1'}, {id: 'asset3'}])
+
 
 describe 'team_a-', () ->
   beforeEach () ->
     this.action = {
       a: 'a-',
-      k: 'gh',
-      v: 'asset1',
+      resource: 'gh',
+      asset: {id: 'asset1'},
     }
-    this.team = {_id: 'team_test', rsrcs: {'gh': {assets: ['asset1', 'asset2']}}, audit: []}
+    this.team = {_id: 'team_test', rsrcs: {'gh': {assets: [{id: 'asset1'}, {id: 'asset2'}]}}, audit: []}
     
 
   it 'removes the asset from the team, if there', () ->
     a.do_actions.team['a-'](this.team, this.action, actor)
-    expect(this.team.rsrcs.gh.assets).toEqual(['asset2'])
+    expect(this.team.rsrcs.gh.assets).toEqual([{id: 'asset2'}])
 
   it 'does not remove the asset if not there', () ->
-    this.team.rsrcs.gh.assets = ['asset2']
+    this.team.rsrcs.gh.assets = [{id: 'asset2'}]
     a.do_actions.team['a-'](this.team, this.action, actor)
-    expect(this.team.rsrcs.gh.assets).toEqual(['asset2'])
+    expect(this.team.rsrcs.gh.assets).toEqual([{id: 'asset2'}])

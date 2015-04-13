@@ -7,8 +7,8 @@ describe 'user_r+', () ->
   beforeEach () ->
     this.action = {
       a: 'r+',
-      k: 'kratos',
-      v: 'admin',
+      resource: 'kratos',
+      role: 'admin',
     }
     this.user = {_id: 'user1', roles:[], audit: []}
 
@@ -26,8 +26,8 @@ describe 'user_r-', () ->
   beforeEach () ->
     this.action = {
       a: 'r-',
-      k: 'kratos',
-      v: 'admin',
+      resource: 'kratos',
+      role: 'admin',
     }
     this.user = {_id: 'user1', roles:['kratos|admin', 'gh|user'], audit: []}
 
@@ -69,8 +69,8 @@ describe 'user_d+', () ->
   beforeEach () ->
     this.action = {
       a: 'u-',
-      k: ['x', 'y'],
-      v: {a: 1, c: 3},
+      path: ['x', 'y'],
+      data: {a: 1, c: 3},
     }
     this.user = {_id: 'user1', data: {}, audit: []}
 
@@ -85,6 +85,6 @@ describe 'user_d+', () ->
 
   it 'errors if value is not an object', () ->
     expect(() ->
-      this.action.v = []
+      this.action.path = []
       a.do_actions.user['d+'](this.user, this.action, actor)
     ).toThrow()

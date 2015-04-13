@@ -145,20 +145,4 @@ c =
 
   client: git
 
-# nodeifyAll = (nested_method_hash) ->
-#   ###
-#   given a nested hash of methods that return promises, create
-#   a corresponding nested hash of methods that use standard node
-#   callbacks
-#   ###
-#   out = {}
-#   for k, v of nested_method_hash
-#     if typeof v == 'function'
-#       out[k] = Promise.nodeify(v)
-#     else
-#       out[k] = nodeifyAll(v)
-#   return out
-
-# c.cb = nodeifyAll(c)
-
 module.exports = c

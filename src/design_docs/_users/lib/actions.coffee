@@ -35,13 +35,15 @@ a.do_actions =
 a.validate_actions =
   user:
     'r+': (event, actor, old_user, new_user) -> 
-            validate.add_resource_role(actor, new_user, event.resource, event.role)
+      validate.add_resource_role(actor, new_user, event.resource, event.role)
     'r-': (event, actor, old_user, new_user) -> 
-            validate.remove_resource_role(actor, new_user, event.resource, event.role)
+      validate.remove_resource_role(actor, new_user, event.resource, event.role)
     'u+': (event, actor, old_user, new_user) -> 
-            validate.add_user(actor, old_user)
+      validate.add_user(actor, old_user or new_user)
     'u-': (event, actor, old_user, new_user) -> 
-            validate.remove_user(actor, user)
+      validate.remove_user(actor, old_user)
+    'd+': (event, actor, old_user, new_user) ->
+      validate.add_user_data(actor, old_user, new_user)
 
 a.do_action = do_action(a.do_actions,
                validate._get_doc_type,

@@ -21,7 +21,4 @@ gh = (auth) ->
 
     _is_gh_team_admin: is_gh_team_admin
 
-if window?
-  gh(window.kratos.validation.auth)
-else if exports?
-  module.exports = gh
+module.exports = gh

@@ -1,6 +1,9 @@
 auth = (validation) ->
   validation.auth = auth = {}
 
+  auth.is_same_user = (user1, user2) ->
+    return user1.name == user2.name
+
   auth.is_system_user = (user) ->
     return user.name in ['admin']
 
@@ -65,6 +68,9 @@ auth = (validation) ->
   auth.remove_resource_role = (actor, resource, role) ->
     return auth.is_active_user(actor) and auth[resource]?.remove_resource_role?(actor, role) or false
 
+  auth.add_user_data = (actor, user) ->
+    return auth.is_active_user(actor) and (auth.is_same_user(actor, user) or auth.is_system_user(actor))
+
   auth.roles =
     team: [
       'admin',
@@ -81,11 +87,7 @@ auth = (validation) ->
     'gh'
   ]
 
-  if not window?
-    require('./kratos')(auth)
-    require('./gh')(auth)
+  require('./kratos')(auth)
+  require('./gh')(auth)
 
-if window?
-  auth(window.kratos.validation)
-else
-  module.exports = auth
+module.exports = auth

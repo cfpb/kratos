@@ -1,6 +1,22 @@
+_deepExtend = (target, source) ->
+  ###
+  recursively extend an object.
+  does not recurse into arrays
+  ###
+  for k, sv of source
+    tv = target[k]
+    if tv instanceof Array
+      target[k] = sv
+    else if typeof(tv) == 'object' and typeof(sv) == 'object'
+      target[k] = _deepExtend(tv, sv)
+    else
+      target[k] = sv
+  return target
+
 validation = (validation) ->
   auth = validation.auth
   validation.validation =
+    _deepExtend: _deepExtend
     add_team: (team) ->
     remove_team: (team) ->
 
@@ -29,10 +45,25 @@ validation = (validation) ->
         throw('invalid role: ' + role)
     remove_resource_role: (user, resource, role) ->
 
-  if not window?
-    require('./gh')(validation.validation)
+    add_user_data: (actor, old_user, new_user) ->
+      old_data = old_user.data
+      new_data = new_user.data
+      if auth.is_system_user(actor)
+        form_type = 'system'
+      else if auth.is_same_user(actor, old_user)
+        form_type = 'self'
+      else
+        throw "invalid authorization"
+      form = validation.forms.user_data[form_type]
+      form.setValue(new_data)
+      validated_data = form.getClean()
+      merged_validated_old_data = _deepExtend(old_data, validated_data)
+      merged_validated_new_data = _deepExtend(new_data, validated_data)
+      log(merged_validated_old_data)
+      log(merged_validated_new_data)
+      if JSON.stringify(merged_validated_new_data) != JSON.stringify(merged_validated_old_data)
+        throw('Modifications not allowed by schema')
 
-if window?
-  validation(window.kratos.validation)
-else
-  module.exports = validation
+  require('./gh')(validation.validation)
+
+module.exports = validation

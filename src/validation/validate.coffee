@@ -53,9 +53,10 @@ validation =
   remove_resource_role: (actor, user, resource, role) ->
     validation._validate('remove_resource_role', [actor, resource, role], [user, resource, role])
 
-if window?
-  window.kratos = {validation: validation}
-else
-  require('./auth/auth')(validation)
-  require('./val/val')(validation)
-  module.exports = validation
+  add_user_data: (actor, old_user, new_user) ->
+    validation._validate('add_user_data', [actor, old_user], [actor, old_user, new_user])
+
+require('./auth/auth')(validation)
+require('./val/val')(validation)
+require('./forms/forms')(validation)
+module.exports = validation

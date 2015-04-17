@@ -117,7 +117,7 @@ teams.add_asset = (db, actor_name, team_name, resource, asset_data) ->
     if not isAuthorized
       return Promise.reject({code: 401, error: 'unauthorized', msg: 'You are not authorized to add this asset'})
 
-    handler = resources[resource]?.add_asset
+    handler = resources[resource]?.getOrCreateAsset
     if not handler
       return Promise.reject({code: 404, error: "not_found", msg: 'Resource, ' + resource + ', not found.'})
 

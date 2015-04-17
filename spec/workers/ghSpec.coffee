@@ -314,7 +314,7 @@ describe 'handle_deactivate_user', () ->
       done()
     )
 
-describe 'add_asset', () ->
+describe 'getOrCreateAsset', () ->
   beforeEach () ->
     spyOn(git.repo, 'createPush').andReturn(Promise.resolve({id: 456, name: 'test2', full_name: 'kratos-test/test2'}))
     spyOn(git.teams.repo, 'add').andReturn(Promise.resolve('xxx'))
@@ -332,14 +332,14 @@ describe 'add_asset', () ->
             admin: 2
 
   it 'does nothing if the repo already exists', (done) ->
-    gh.add_asset({new: 'test1'}, this.team).then((resp) ->
+    gh.getOrCreateAsset({new: 'test1'}, this.team).then((resp) ->
       expect(git.repo.createPush).not.toHaveBeenCalled()
       expect(resp).toBeUndefined()
       done()
     )
 
   it "gets/creates a repo, and returns the details to store in couch", (done) ->
-    gh.add_asset({new: 'test2'}, this.team).then((resp) ->
+    gh.getOrCreateAsset({new: 'test2'}, this.team).then((resp) ->
       expect(git.repo.createPush).toHaveBeenCalledWith({name: 'test2'})
       expect(resp).toEqual({gh_id: 456, name: 'test2', full_name: 'kratos-test/test2'})
       done()

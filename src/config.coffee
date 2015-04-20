@@ -6,6 +6,8 @@ config =
     HOST: 'localhost'
     PORT: 5984
     HTTPS: false
+    SYSTEM_USER: 'admin'
+
 
 _.extend(config, config_secret)
 

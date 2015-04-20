@@ -1,7 +1,7 @@
 # Node #
 ########
 /lib/config_secret.js
-/src/config_secret.iced
+/src/config_secret.coffee
 /template_repo
 
 # Compiled source #

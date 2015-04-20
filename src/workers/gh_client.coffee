@@ -1,5 +1,6 @@
 _ = require('underscore')
 conf = require('../config')
+
 gh_conf = conf.RESOURCES.GH
 path = require('path')
 Promise = require('pantheon-helpers/lib/promise')
@@ -107,7 +108,8 @@ c =
         body_only: true,
       }).catch((err) ->
         if err.msg?.errors?[0]?.message == 'name already exists on this account'
-          return git.find_one(url, (repo) -> return repo.name == gh_repo_opts['name'])
+          url = '/repos/' + gh_conf.ORG_NAME + '/' + gh_repo_opts.name
+          return git.get({url: url, body_only: true})
         else
           return Promise.reject(err)
       )
@@ -128,7 +130,7 @@ c =
         push_repo_url = get_authenticated_repo_url(repo_data.clone_url)
         exec('git push "' + push_repo_url + '" master', {cwd: TEMPLATE_DIR})
       ).catch((err) ->
-        console.log('we had an error')
+        console.error('we had an error')
         pushTemplate(repo_data)
       ).then(() ->
         Promise.resolve(repo_data)
@@ -137,8 +139,8 @@ c =
     createPush: (gh_repo_opts) ->
       # create the repo, if it doesn't exist, then push the template
       # if new repo
-      c.repo.create(gh_repo_opts).next((repo_data) ->
-        return git.repo.pushTemplate(repo_data)
+      c.repo.create(gh_repo_opts).then((repo_data) ->
+        return c.repo.pushTemplate(repo_data)
       )
 
   client: git

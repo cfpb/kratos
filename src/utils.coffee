@@ -32,13 +32,14 @@ x.compact_hash = (hash) ->
   else
     return out
 
-x.get_org_dbs = (callback) ->
+x.get_org_dbs = () ->
   ###
+  return promise only
   return all organization databases
   ###
-  await couch_utils.nano_admin.db.list(defer(err, dbs))
-  if err then return callback(err)
-  out = _.filter(dbs, (x) -> x.indexOf('org_') == 0)
-  return callback(null, out)
+  couch_utils.nano_system_user.db.list('promise').then((dbs) ->
+    out = _.filter(dbs, (x) -> x.indexOf('org_') == 0)
+    Promise.resolve(out)
+  )
 
 module.exports = x

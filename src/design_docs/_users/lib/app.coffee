@@ -1,11 +1,11 @@
 _ = require('lib/underscore')
 h = require('./helpers')
-validation = require('lib/validation/validate')
+validate = require('lib/validation/validate')
 actions = require('./actions')
 audit = require('./shared/audit')
 
 
-auth = validation.auth
+auth = validate.auth
 
 dd = 
   views:
@@ -17,34 +17,44 @@ dd =
             emit([resource_name, resource_id], doc.name)
     by_resource_username:
       map: (doc) ->
+        auth = require('views/lib/validation/validate').auth
+        if not auth.is_active_user(doc)
+          return
         for resource_name, resource of doc.rsrcs
           resource_username = resource.username
           if resource_username
             emit([resource_name, resource_username], doc.name)
     by_username:
       map: (doc) ->
-        if doc.data.username
+        auth = require('views/lib/validation/validate').auth
+        if auth.is_active_user(doc) and doc.data.username
           emit(doc.data.username)
     by_name:
       map: (doc) ->
-        if doc.name
-          emit(doc.name)
+        validate = require('views/lib/validation/validate')
+        if validate._is_user(doc)
+          emit([validate.auth.is_active_user(doc), doc.name])
     by_auth:
       map: (doc) ->
+        auth = require('views/lib/validation/validate').auth
+        if not auth.is_active_user(doc)
+          return
         for role in doc.roles
           out = role.split('|')
           out.push(doc.name)
           emit(out)
     contractors:
       map: (doc) ->
-        emit(doc.data?.contractor or false, doc.username)
+        auth = require('views/lib/validation/validate').auth
+        if auth.is_active_user(doc)
+          emit(doc.data?.contractor or false, doc.data.username)
 
   lists:
     get_users: (header, req) ->
       out = []
       while(row = getRow())
         doc = row.doc
-        continue if not validation._is_user(doc)
+        continue if not validate._is_user(doc)
         doc = h.sanitize_user(doc)
         out.push(doc)
       return JSON.stringify(out)
@@ -73,12 +83,6 @@ dd =
     do_action: actions.do_action
 
   rewrites: [
-    {
-      from: "/users",
-      to: "/_list/get_users/_all_docs",
-      method: 'GET',
-      query: {include_docs: 'true'},
-    },
     {
       from: "/users/:user_id",
       to: "/_show/get_user/:user_id",

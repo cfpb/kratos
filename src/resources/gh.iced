@@ -1,5 +1,6 @@
 conf = require('../config')
-gh_conf = conf.RESOURCES.GH
+
+gh_conf = conf.RESOURCES.G
 request = require('request')
 parse_links = require('parse-links')
 couch_utils = require('../couch_utils')
@@ -50,7 +51,7 @@ x.import_users = (callback) ->
       },
       audit: [],
     })
-  db = couch_utils.nano_admin.use('_users')
+  db = couch_utils.nano_system_user.use('_users')
   return db.bulk({docs: users}, callback)
 
 x.import_teams = (db_name, admin_id, callback) ->
@@ -61,7 +62,6 @@ x.import_teams = (db_name, admin_id, callback) ->
   teams = {}
   for raw_team in raw_teams
     if raw_team.id in gh_conf.UNMANAGED_TEAMS
-      console.log('skipping', raw_team.id)
       continue
     [name, typ, perm] = raw_team.name.split(' ')
     raw_team.perm = perm
@@ -81,7 +81,7 @@ x.import_teams = (db_name, admin_id, callback) ->
   errs = _.compact(errs)
   return callback(errs) if errs.length
   team_docs = {docs: team_data}
-  db = couch_utils.nano_admin.use('org_' + db_name)
+  db = couch_utils.nano_system_user.use('org_' + db_name)
   await couch_utils.ensure_db(db, 'bulk', team_docs, defer(err, resp))
   return callback(err) if err
   console.log('total time:', +new Date() - start_time)
@@ -136,7 +136,7 @@ import_members = (teams, admin_id, callback) ->
   members = _.map(members, (item) -> item.id)
   members = _.uniq(members)
   member_gh_ids = _.map(members, (item) -> ['gh', item])
-  await couch_utils.nano_admin.use('_users').view('base', 'by_resource_id', {keys: member_gh_ids}, defer(err, user_rows))
+  await couch_utils.nano_system_user.use('_users').view('base', 'by_resource_id', {keys: member_gh_ids}, defer(err, user_rows))
   return callback(err) if err
 
   for user in user_rows.rows

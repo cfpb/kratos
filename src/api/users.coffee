@@ -46,6 +46,19 @@ users.handle_get_users = (req, resp) ->
   else
     users.get_users(req.query).pipe(resp)
 
+users.get_users_by_name = (names) ->
+  ids = names.map((name) ->
+    return 'org.couchdb.user:'+name
+  )
+  user_db.list({keys: ids, include_docs: true})
+
+users.handle_get_users_by_name = (req, resp) ->
+  users = req.body
+  if _.isArray(users)
+    return users.get_user(user_name).pipe(resp)
+  else
+    resp.status(400).end(JSON.stringify({'error': 'bad_request ', 'msg': 'data must be an array - []'}))
+
 users.get_user = (user_name, callback) ->
   return couch_utils.rewrite(user_db, 'base', '/users/org.couchdb.user:' + user_name, callback)
 

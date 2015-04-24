@@ -1,4 +1,4 @@
-auth = require('../../../lib/validation/validate').auth
+auth = require('../../../lib/validation').auth
 
 system_user         = {name: 'admin'}
 team_admin          = {name: 'etkdg394hpmujn', roles: ['kratos|enabled']}

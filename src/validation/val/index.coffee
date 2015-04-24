@@ -54,13 +54,11 @@ validation = (validation) ->
         form_type = 'self'
       else
         throw "invalid authorization"
-      form = validation.forms.user_data[form_type]
-      form.setValue(new_data)
+      form = validation.schema.user_data[form_type]({value: new_data})
       validated_data = form.getClean()
       merged_validated_old_data = _deepExtend(old_data, validated_data)
       merged_validated_new_data = _deepExtend(new_data, validated_data)
-      log(merged_validated_old_data)
-      log(merged_validated_new_data)
+      console.log(merged_validated_old_data, merged_validated_new_data)
       if JSON.stringify(merged_validated_new_data) != JSON.stringify(merged_validated_old_data)
         throw('Modifications not allowed by schema')
 

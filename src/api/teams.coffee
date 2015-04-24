@@ -3,8 +3,8 @@ utils = require('../utils')
 request = require('request')
 uuid = require('node-uuid')
 _ = require('underscore')
-Promise = require('pantheon-helpers/lib/promise')
-doAction = require('pantheon-helpers/lib/doAction')
+Promise = require('pantheon-helpers').promise
+doAction = require('pantheon-helpers').doAction
 
 resources = {
   gh: require('../workers/gh'),

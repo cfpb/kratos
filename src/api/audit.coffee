@@ -2,7 +2,7 @@ couch_utils = require('../couch_utils')
 conf = require('../config')
 orgs = conf.ORGS
 _ = require('underscore')
-Promise = require('pantheon-helpers/lib/Promise')
+Promise = require('pantheon-helpers').Promise
 
 audit = {}
 

@@ -1,9 +1,5 @@
-auth = require('./validation/validate').auth
-
-try
-  h = require('./shared/helpers')
-catch
-  h = require('pantheon-helpers/lib/design_docs/helpers')
+auth = require('./validation/index').auth
+h = require('pantheon-helpers').design_docs.helpers
 
 h.add_team_perms = (original_team, user) ->
   ###

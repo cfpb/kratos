@@ -4,8 +4,8 @@ couch_utils = require('../couch_utils')
 user_db = couch_utils.nano_system_user.use('_users')
 uuid = require('node-uuid')
 conf = require('../config')
-doAction = require('pantheon-helpers/lib/doAction')
-validate = require('../validation/validate')
+doAction = require('pantheon-helpers').doAction
+validate = require('../validation')
 
 users = {}
 

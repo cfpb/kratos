@@ -1,6 +1,6 @@
-fields = require('../doccontrol/index').fields
+fields = require('validoc').fields
 
-user_data = (forms) ->
+user_data = (schema) ->
   pubKeyField = {
     name: 'publicKey',
     field: 'ContainerField',
@@ -31,8 +31,8 @@ user_data = (forms) ->
       pubKeyListField
     ]
 
-  forms.user_data = 
-    self: fields.genField(selfSchema)
-    system: fields.genField(systemSchema)
+  schema.user_data =
+    self: (opts) -> fields.genField(selfSchema, opts)
+    system: (opts) -> fields.genField(systemSchema, opts)
 
 module.exports = user_data

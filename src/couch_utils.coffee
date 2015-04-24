@@ -1,5 +1,5 @@
 conf = require('./config')
-couch_utils = require('pantheon-helpers/lib/couch_utils')(conf)
+couch_utils = require('pantheon-helpers').couch_utils(conf)
 Promise = require('promise')
 _ = require('underscore')
 

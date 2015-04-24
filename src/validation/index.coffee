@@ -56,7 +56,7 @@ validation =
   add_user_data: (actor, old_user, new_user) ->
     validation._validate('add_user_data', [actor, old_user], [actor, old_user, new_user])
 
-require('./auth/auth')(validation)
-require('./val/val')(validation)
-require('./forms/forms')(validation)
+require('./auth/index')(validation)
+require('./val/index')(validation)
+require('./schema/index')(validation)
 module.exports = validation

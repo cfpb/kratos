@@ -47,7 +47,7 @@ describe 'add_team_member', ->
     expect(() ->
       actual = validation.add_team_member(team, user, 'xxx')
     ).toThrow('invalid role: xxx')
-    
+
 describe 'add_resource_role', () ->
   it 'allowed when the user is enabled and the role exists', ->
     actual = validation.add_resource_role(user, 'gh', 'user')
@@ -90,5 +90,5 @@ describe 'add_user_data', () ->
     old_user = {name: user.name, data: {username: 'user1'}}
     new_user = {name: user.name, data: {username: 'user1', contractor: true}}
     expect(() ->
-      actual = validation.add_user_data(system_user, old_user, new_user)
+      actual = validation.add_user_data(user, old_user, new_user)
     ).toThrow()

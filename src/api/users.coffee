@@ -99,6 +99,7 @@ users.handle_add_data = (req, resp) ->
   users.add_data(req.couch, user_name, path, data).pipe(resp)
 
 users.reactivate_user = (client, user_name, callback) ->
+  user_id = 'org.couchdb.user:' + user_name
   doAction(client.use('_users'), 'base', user_id, {
     a: 'u+',
   }, callback)

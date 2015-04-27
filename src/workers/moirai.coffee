@@ -1,6 +1,6 @@
 _ = require('underscore')
 users = require('../api/users')
-auth = require('../validation/validate').auth
+auth = require('../validation').auth
 Promise = require('pantheon-helpers/lib/promise')
 conf = require('../config')
 

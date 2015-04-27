@@ -5,6 +5,7 @@ uuid = require('node-uuid')
 _ = require('underscore')
 Promise = require('pantheon-helpers').promise
 doAction = require('pantheon-helpers').doAction
+validation = require('../validation')
 
 resources = {
   gh: require('../workers/gh'),
@@ -99,13 +100,20 @@ teams.remove_member = (db, team_name, role, user_id, callback) ->
     user: user_id,
   }, callback)
 
-teams.add_asset = (db, team_name, resource, asset_data) ->
+teams.add_asset = (db, actor_name, team_name, resource, asset_data) ->
   # only returns a promise; no streaming/callback support
-  team_id = 'team_' + team_name
-  db.get(team_id, 'promise').then((team) ->
+  users = require('./users')
+  Promise.all([
+    teams.get_team(db, team_name, 'promise'),
+    users.get_user(actor_name, 'promise'),
+  ]).then(([team, actor]) ->
+    isAuthorized = validation.auth.add_team_asset(actor, team, resource)
+    if not isAuthorized
+      return Promise.throw({code: 401, error: 'unauthorized', msg: 'You are not authorized to add this asset'})
+
     handler = resources[resource]?.add_asset
     if not handler
-      return Promise.reject({error: "not_found", msg: 'Resource, ' + resource + ', not found.'})
+      return Promise.reject({code: 404, error: "not_found", msg: 'Resource, ' + resource + ', not found.'})
 
     handler(asset_data, team).then((new_asset) ->
       if not new_asset?  # no change
@@ -140,10 +148,13 @@ teams.handle_remove_member = (req, resp) ->
 
 teams.handle_add_asset = (req, resp) ->
   [db, team_name, params] = process_req(req)
-  teams.add_asset(db, team_name, params.resource, req.body).then((team) ->
+  teams.add_asset(db, req.session.user, team_name, params.resource, req.body).then((team) ->
     resp.send(JSON.stringify(team))
   ).catch((err) ->
-    resp.status(500).send(JSON.stringify({error: 'server error', msg: 'something went wrong. please try again.'}))
+    if err.code
+      resp.status(err.code).send(JSON.stringify(_.pick(err, 'error', 'msg')))
+    else
+      resp.status(500).send(JSON.stringify({error: 'server error', msg: 'something went wrong. please try again.'}))
   )
 
 teams.handle_remove_asset = (req, resp) ->

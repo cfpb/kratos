@@ -6,6 +6,7 @@ _ = require('underscore')
 Promise = require('pantheon-helpers').promise
 doAction = require('pantheon-helpers').doAction
 validation = require('../validation')
+conf = require('../config')
 
 resources = {
   gh: require('../workers/gh'),
@@ -103,9 +104,14 @@ teams.remove_member = (db, team_name, role, user_id, callback) ->
 teams.add_asset = (db, actor_name, team_name, resource, asset_data) ->
   # only returns a promise; no streaming/callback support
   users = require('./users')
+  if actor_name == conf.COUCHDB.SYSTEM_USER 
+    user_promise = Promise.resolve({name: conf.COUCHDB.SYSTEM_USER, roles: []})
+  else
+    user_promise = users.get_user(actor_name, 'promise')
+
   Promise.all([
     teams.get_team(db, team_name, 'promise'),
-    users.get_user(actor_name, 'promise'),
+    user_promise,
   ]).then(([team, actor]) ->
     isAuthorized = validation.auth.add_team_asset(actor, team, resource)
     if not isAuthorized

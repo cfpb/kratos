@@ -20,6 +20,7 @@ user_data = (schema) ->
     name: 'systemFields'
     field: 'ContainerField'
     schema: [
+      { name: 'contractor', field: 'NullBooleanField'},
       { name: 'username', field: 'CharField', maxLength: 40},
       pubKeyListField,
     ]

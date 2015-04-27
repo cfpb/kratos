@@ -1,6 +1,6 @@
 _ = require('underscore')
 users = require('../api/users')
-auth = require('../validation/validate').auth
+auth = require('../validation').auth
 git = require('./gh_client')
 Promise = require('pantheon-helpers').promise
 teams_api = require('../api/teams')

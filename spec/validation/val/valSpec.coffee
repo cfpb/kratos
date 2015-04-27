@@ -73,11 +73,12 @@ describe 'remove_resource_role', () ->
     expect(actual).toBeUndefined()
 
 describe 'add_user_data', () ->
-  it 'not allowed when setting value not in schema', () ->
+  it 'not allowed when setting value not in system schema', () ->
     old_user = {data: {username: 'user1'}}
     new_user = {data: {username: 'user1', xxyyzz: true}}
-    actual = validation.add_user_data(system_user, old_user, new_user)
-    expect(actual).toBeUndefined()
+    expect(() ->
+      actual = validation.add_user_data(system_user, old_user, new_user)
+    ).toThrow()
 
   it 'allowed when system sets contractor', () ->
     old_user = {data: {username: 'user1'}}
@@ -88,6 +89,6 @@ describe 'add_user_data', () ->
   it 'not allowed when self sets contractor', () ->
     old_user = {name: user.name, data: {username: 'user1'}}
     new_user = {name: user.name, data: {username: 'user1', contractor: true}}
-    actual = validation.add_user_data(user, old_user, new_user)
-    expect(actual).toBeUndefined()
-
+    expect(() ->
+      actual = validation.add_user_data(system_user, old_user, new_user)
+    ).toThrow()

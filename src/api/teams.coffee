@@ -115,7 +115,7 @@ teams.add_asset = (db, actor_name, team_name, resource, asset_data) ->
   ]).then(([team, actor]) ->
     isAuthorized = validation.auth.add_team_asset(actor, team, resource)
     if not isAuthorized
-      return Promise.throw({code: 401, error: 'unauthorized', msg: 'You are not authorized to add this asset'})
+      return Promise.reject({code: 401, error: 'unauthorized', msg: 'You are not authorized to add this asset'})
 
     handler = resources[resource]?.add_asset
     if not handler
@@ -133,7 +133,7 @@ teams.add_asset = (db, actor_name, team_name, resource, asset_data) ->
     )
   ).catch((err) ->
     console.error('add_asset_error', resource, asset_data, err)
-    Promise.throw(err)
+    Promise.reject(err)
   )
 
 teams.remove_asset = (db, team_name, resource, asset_id, callback) ->

@@ -5,7 +5,9 @@ teams = require('../../lib/api/teams')
 auth = require('../../lib/validation').auth
 Promise = require('promise')
 
-onError = (err) -> console.log('ERR!!', err)
+onError = (done) ->
+    (err) -> done(err)
+
 describe 'add_user', () ->
   beforeEach () ->
     this.user =
@@ -67,7 +69,7 @@ describe 'handle_add_user', () ->
       expect(gh.testing.add_user).toHaveBeenCalledWith('user_obj', 'member', 'team')
       expect(resp).toBeUndefined()
       done()
-    ).catch(onError)
+    ).catch(onError(done))
 
 describe 'remove_user', () ->
   beforeEach () ->
@@ -144,7 +146,7 @@ describe 'handle_remove_user', () ->
       expect(gh.testing.remove_user).toHaveBeenCalledWith('user_obj', 'member', 'team')
       expect(resp).toBeUndefined()
       done()
-    ).catch(onError)
+    ).catch(onError(done))
 
 describe 'remove_repo', () ->
   it 'removes a repo from all github teams corresponding to a given team', (done) ->
@@ -169,7 +171,7 @@ describe 'handle_remove_repo', () ->
       expect(gh.testing.remove_repo).toHaveBeenCalledWith('reponame', 'team')
       expect(resp).toBeUndefined()
       done()
-    ).catch(onError)
+    ).catch(onError(done))
 
 describe 'add_repo', () ->
   it 'adds a repo to all github teams corresponding to a given team', (done) ->
@@ -194,7 +196,7 @@ describe 'handle_add_repo', () ->
       expect(gh.testing.add_repo).toHaveBeenCalledWith('reponame', 'team')
       expect(resp).toBeUndefined()
       done()
-    ).catch(onError)
+    ).catch(onError(done))
 
 describe 'create_team', () ->
   it 'creates github admin and push teams for the created kratos team; returns a {perm: team_id} hash', (done) ->
@@ -254,7 +256,7 @@ describe 'handle_add_gh_rsrc_role', () ->
       expect(git.teams.user.add).toHaveBeenCalledWith([12,22], 'user1')
       expect(resp).toBeUndefined()
       done()
-    ).catch((err) -> console.log(err); done())
+    ).catch(onError(done))
 
 describe 'handle_remove_gh_rsrc_role', () ->
   handle_remove_gh_rsrc_role = gh.handlers.user.self['r-']
@@ -290,7 +292,7 @@ describe 'handle_remove_gh_rsrc_role', () ->
       expect(git.teams.user.remove).toHaveBeenCalledWith([12,22], 'user1')
       expect(resp).toBeUndefined()
       done()
-    ).catch((err) -> console.log(err); done())
+    ).catch(onError(done))
 
 
 describe 'handle_deactivate_user', () ->

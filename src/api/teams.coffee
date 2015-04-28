@@ -10,6 +10,7 @@ conf = require('../config')
 
 resources = {
   gh: require('../workers/gh'),
+  moirai: require('../workers/moirai'),
 }
 
 process_req = (req) ->
@@ -65,19 +66,19 @@ teams.get_all_teams = () ->
     Promise.resolve(all_teams)
   )
 
-teams.get_team_roles_for_user = (db, user_id, callback) ->
+teams.get_team_roles_for_user = (db, user_name, callback) ->
   ###
   return an array of team/role hashes to which the user belongs:
     [{team: <obj>, role: <str>}]
   ###
-  db.viewWithList('base', 'by_role', 'get_team_roles', {include_docs: true, startkey: [user_id], endkey: [user_id, {}]}, callback)
+  db.viewWithList('base', 'by_role', 'get_team_roles', {include_docs: true, startkey: [user_name], endkey: [user_name, {}]}, callback)
 
-teams.get_all_team_roles_for_user = (user_id) ->
+teams.get_all_team_roles_for_user = (user_name) ->
   # returns a promise only
   utils.get_org_dbs('promise').then((org_ids) ->
     team_roles = org_ids.map((org_id) ->
       db = couch_utils.nano_system_user.use(org_id)
-      teams.get_team_roles_for_user(db, user_id, 'promise')
+      teams.get_team_roles_for_user(db, user_name, 'promise')
     )
     Promise.all(team_roles)
   ).then((team_roles) ->

@@ -9,6 +9,7 @@ orgs = conf.ORGS
 
 handlers = {
   gh: require('./workers/gh').handlers,
+  moirai: require('./workers/moirai').handlers,
 }
 
 # org workers

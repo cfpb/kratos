@@ -82,12 +82,15 @@ auth = (validation) ->
     resource: {
       kratos: ['admin', 'disabled'],
       gh: ['user'],
+      moirai: [],
     }
   auth.resources = [
-    'gh'
+    'gh',
+    'moirai'
   ]
 
   require('./kratos')(auth)
   require('./gh')(auth)
+  require('./moirai')(auth)
 
 module.exports = auth

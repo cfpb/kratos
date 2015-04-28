@@ -1,3 +1,4 @@
+teams = require('../../lib/api/teams')
 users = require('../../lib/api/users')
 moirai = require('../../lib/workers/moirai')
 Promise = require('promise')
@@ -46,40 +47,48 @@ describe 'getTeamKeys', () ->
               name: 'test2',
             },
           ]
-    spyOn(users, 'get_users_by_name').andReturn(Promise.resolve([
+    spyOn(users, 'get_users_by_name').andReturn(Promise.resolve({rows:[
       {
         _id: 'org.couchdb.user:member1',
-        data: {
-          publicKeys: [{name: 'moirai', key: 'keyvalue1'}]
+        doc: {
+          data: {
+            publicKeys: [{name: 'moirai', key: 'keyvalue1'}]
+          }
         }
       },
       {
         _id: 'org.couchdb.user:member2',
-        data: {
-          publicKeys: [{name: 'not-moirai', key: 'keyvalue2'}]
+        doc: {
+          data: {
+            publicKeys: [{name: 'not-moirai', key: 'keyvalue2'}]
+          }
         }
       },
       {
         _id: 'org.couchdb.user:member3',
-        data: {
-          publicKeys: []
+        doc: {
+          data: {
+            publicKeys: []
+          }
         }
       },
       {
         _id: 'org.couchdb.user:member3',
-        data: {
-          publicKeys: [
-            {name: 'moirai', key: 'keyvalue4'},
-            {name: 'moirai', key: 'keyvalue4.2'}
-          ]
+        doc: {
+          data: {
+            publicKeys: [
+              {name: 'moirai', key: 'keyvalue4'},
+              {name: 'moirai', key: 'keyvalue4.2'}
+            ]
+          }
         }
       }
-    ]))
+    ]}))
 
   it 'calls get_users_by_name', (done) ->
     moirai.testing.getTeamKeys(this.team).then(() =>
       userList = ['member1', 'member2', 'member3', 'member4']
-      expect(users.get_users_by_name).toHaveBeenCalledWith(userList)
+      expect(users.get_users_by_name).toHaveBeenCalledWith(userList, 'promise')
       done()
     )
 
@@ -173,8 +182,8 @@ describe 'handleRemoveUser', () ->
 describe 'removeCluster', () ->
   it 'calls the moirai API to remove the cluster', (done) ->
     spyOn(moirai.testing.moiraiClient, 'del').andReturn(Promise.resolve())
-    moirai.testing.removeCluster('test_cluster_id').then(() ->
-      expect(moirai.testing.moiraiClient.del).toHaveBeenCalledWith('/moirai/clusters/test_cluster_id')
+    moirai.testing.removeCluster('testClusterId').then(() ->
+      expect(moirai.testing.moiraiClient.del).toHaveBeenCalledWith('/moirai/clusters/testClusterId')
       done()
     )
 
@@ -183,8 +192,8 @@ describe 'handleRemoveCluster', () ->
     handleRemoveCluster = moirai.handlers.team.self['a-']
     spyOn(moirai.testing, 'removeCluster').andReturn(Promise.resolve())
 
-    handleRemoveCluster({asset: {id: 'cluster_id'}}, 'team').then((resp) ->
-      expect(moirai.testing.removeCluster).toHaveBeenCalledWith('cluster_id')
+    handleRemoveCluster({asset: {cluster_id: 'clusterId'}}, 'team').then((resp) ->
+      expect(moirai.testing.removeCluster).toHaveBeenCalledWith('clusterId')
       expect(resp).toBeUndefined()
       done()
     ).catch(onError)
@@ -196,7 +205,7 @@ describe 'handleAddCluster', () ->
     testKeys = ['key1', 'key2']
     spyOn(moirai.testing, 'getTeamKeys').andReturn(Promise.resolve(testKeys))
 
-    handleAddCluster({asset: {id: 'cluster_id'}}, 'team').then((resp) ->
+    handleAddCluster({asset: {cluster_id: 'cluster_id'}}, 'team').then((resp) ->
       expect(moirai.testing.getTeamKeys).toHaveBeenCalledWith('team')
       expect(moirai.testing.setClusterKeys).toHaveBeenCalledWith('cluster_id', testKeys)
       expect(resp).toBeUndefined()
@@ -204,11 +213,37 @@ describe 'handleAddCluster', () ->
     ).catch(onError)
 
 describe 'handleAddData', () ->
-  it 'calls setTeamKeys', (done) ->
+  beforeEach () ->
+    spyOn(teams, 'get_all_team_roles_for_user').andReturn(
+       Promise.resolve([{team: 'team1Obj'}, {team: 'team2Obj'}]))
     spyOn(moirai.testing, 'setTeamKeys').andReturn(Promise.resolve())
+    this.event = {data: {publicKeys: ['key']}}
+    this.user = {name: 'user_name'}
+
+  it 'calls get_all_team_roles_for_user', (done) ->
     handleAddData = moirai.handlers.user['d+']
-    handleAddData('event', 'team').then((resp) ->
-      expect(moirai.testing.setTeamKeys).toHaveBeenCalledWith('team')
+    handleAddData(this.event, this.user).then((resp) ->
+      expect(teams.get_all_team_roles_for_user.calls.length).toEqual(1)
+      expect(teams.get_all_team_roles_for_user).toHaveBeenCalledWith('user_name')
+      expect(resp).toBeUndefined()
+      done()
+    ).catch(onError)
+
+  it 'calls setTeamKeys', (done) ->
+    handleAddData = moirai.handlers.user['d+']
+    handleAddData(this.event, this.user).then((resp) ->
+      expect(moirai.testing.setTeamKeys.calls.length).toEqual(2)
+      expect(moirai.testing.setTeamKeys).toHaveBeenCalledWith('team1Obj')
+      expect(moirai.testing.setTeamKeys).toHaveBeenCalledWith('team2Obj')
+      expect(resp).toBeUndefined()
+      done()
+    ).catch(onError)
+
+  it 'does nothing if publicKeys not defined', (done) ->
+    this.event.data = {sampleData: 'test'}
+    handleAddData = moirai.handlers.user['d+']
+    handleAddData(this.event, this.user).then((resp) ->
+      expect(moirai.testing.setTeamKeys.calls.length).toEqual(0)
       expect(resp).toBeUndefined()
       done()
     ).catch(onError)
@@ -233,11 +268,7 @@ describe 'getOrCreateAsset', () ->
   it 'does nothing if the cluster already exists', (done) ->
     moirai.getOrCreateAsset({name: 'test1'}, this.team).then((resp) ->
       expect(moirai.testing.moiraiClient.post).not.toHaveBeenCalled()
-      expect(resp).toEqual({
-        id: 'ab38f',
-        cluster_id: 'cluster_test1',
-        name: 'test1',
-      })
+      expect(resp).toBeUndefined()
       done()
     )
 

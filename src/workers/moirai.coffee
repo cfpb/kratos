@@ -1,5 +1,6 @@
 _ = require('underscore')
 users = require('../api/users')
+teams = require('../api/teams')
 auth = require('../validation').auth
 Promise = require('pantheon-helpers/lib/promise')
 conf = require('../config')
@@ -17,23 +18,23 @@ emptyResolve = () ->
 
 
 moirai.setClusterKeys = (clusterId, keys) ->
-  url = '/moirai/clusters/'+clusterId+'/keys'
+  url = '/moirai/clusters/'+clusterId.replace('cluster_', '')+'/keys'
   return moirai.moiraiClient.put({url: url, json: keys, body_only: true})
 
 moirai.getTeamKeys = (team) ->
-  adminNames = team.roles.admin.members
-  memberNames = team.roles.member.members
+  adminNames = team.roles.admin?.members or []
+  memberNames = team.roles.member?.members or []
   allMemberNames = _.unique(adminNames.concat(memberNames))
-  users.get_users_by_name(allMemberNames).then((userList) ->
-    keyList = userList.map((user) ->
-      return _.findWhere(user.data.publicKeys or [], {name: 'moirai'})
+  users.get_users_by_name(allMemberNames, 'promise').then((userList) ->
+    keyList = userList.rows.map((user) ->
+      return _.findWhere(user.doc.data.publicKeys or [], {name: 'moirai'})
     )
     return Promise.resolve(_.compact(keyList).map((key) -> key.key))
   )
 
 moirai.setTeamKeys = (team) ->
   moirai.getTeamKeys(team).then((keys) ->
-    clusters = team.rsrcs.moirai.assets
+    clusters = team.rsrcs.moirai?.assets or []
     clusterIds = _.pluck(clusters, 'cluster_id')
     promisesList = clusterIds.map((clusterId) ->
       moirai.setClusterKeys(clusterId, keys)
@@ -48,29 +49,42 @@ handleRemoveUser = (event, team) ->
   moirai.setTeamKeys(team)
 
 moirai.removeCluster = (cluster_id) ->
-  url = '/moirai/clusters/' + cluster_id
+  url = '/moirai/clusters/' + cluster_id.replace('cluster_', '')
   return moirai.moiraiClient.del(url)
 
 handleRemoveCluster = (event, team) ->
-  cluster_id = event.asset.id
+  cluster_id = event.asset.cluster_id
   return moirai.removeCluster(cluster_id).then(emptyResolve)
 
 handleAddCluster = (event, team) ->
-  cluster_id = event.asset.id
-  return moirai.getTeamKeys(team).then((keys) ->
+  cluster_id = event.asset.cluster_id
+  # sleep so that moirai can record new ip addresses
+  moirai.getTeamKeys(team).then((keys) ->
     moirai.setClusterKeys(cluster_id, keys).then(emptyResolve)
   )
 
-handleAddData = (event, team) ->
-  moirai.setTeamKeys(team)
+handleAddData = (event, user) ->
+  # look at the event, see if one of the keys in the event is publicKeys
+  if event.data.publicKeys?
+    return teams.get_all_team_roles_for_user(user.name).then((teamList) ->
+      teamPromises = teamList.map((teamHash) ->
+        team = teamHash.team
+        moirai.setTeamKeys(team)
+      )
+      return Promise.all(teamPromises).then(() ->
+        Promise.resolve()
+      )
+    )
+  else
+    return Promise.resolve()
 
 
 getOrCreateAsset = (assetData, team) ->
   url = '/moirai/clusters'
-  clusters = team.rsrcs.moirai.assets
+  clusters = team.rsrcs.moirai?.assets or []
   existingClusterWithName = _.findWhere(clusters, {name: assetData.name})
   if existingClusterWithName?
-    return Promise.resolve(existingClusterWithName)
+    return Promise.resolve()
   else
     return moirai.moiraiClient.post({url: url, json: assetData, body_only: true}).then((newClusterData) ->
       Promise.resolve({

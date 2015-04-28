@@ -46,11 +46,11 @@ users.handle_get_users = (req, resp) ->
   else
     users.get_users(req.query).pipe(resp)
 
-users.get_users_by_name = (names) ->
+users.get_users_by_name = (names, callback) ->
   ids = names.map((name) ->
     return 'org.couchdb.user:'+name
   )
-  user_db.list({keys: ids, include_docs: true})
+  user_db.list({keys: ids, include_docs: true}, callback)
 
 users.handle_get_users_by_name = (req, resp) ->
   users = req.body

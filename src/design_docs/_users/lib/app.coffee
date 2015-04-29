@@ -18,7 +18,6 @@ dd =
     by_resource_username:
       map: (doc) ->
         auth = require('views/lib/auth')
-        log(auth)
         if not auth.is_active_user(doc)
           return
         for resource_name, resource of doc.rsrcs

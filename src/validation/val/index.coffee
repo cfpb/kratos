@@ -55,7 +55,12 @@ validation = (validation) ->
       else
         throw "invalid authorization"
       form = validation.schema.user_data[form_type]({value: new_data})
+      # validation_data returns the cleaned data, excluding any data that is not explicitly allowed by the schema
+      # in a standardized format that is not necessarily the same as the data as it was initially provided
       validated_data = form.getClean()
+      # so we merge the validated data into the old data and the new data and then ensure they are equal.
+      # if data that was not allowed to be modified is modified, then they won't be the same, and there will be an error.
+      # if the getClean function modified some data, then the modified data will be merged into both old and new and there won't be an error.
       merged_validated_old_data = _deepExtend(old_data, validated_data)
       merged_validated_new_data = _deepExtend(new_data, validated_data)
       if JSON.stringify(merged_validated_new_data) != JSON.stringify(merged_validated_old_data)

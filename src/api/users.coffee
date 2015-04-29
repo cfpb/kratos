@@ -57,7 +57,16 @@ users.handle_get_users = (req, resp) ->
     users.get_users(req.query).pipe(resp)
 
 users.get_user = (user_name, callback) ->
-  return couch_utils.rewrite(user_db, 'base', '/users/org.couchdb.user:' + user_name, callback)
+  ### will return system user if callback or promise, but not if stream ###
+  system_user_name = conf.COUCHDB.SYSTEM_USER
+  system_user = {name: system_user_name, roles: []}
+  is_system_user = conf.COUCHDB.SYSTEM_USER == user_name
+  if is_system_user and _.isFunction(callback)
+    return callback(null, system_user)
+  else if is_system_user and callback == 'promise'
+    return user_promise = Promise.resolve(system_user)
+  else
+    return couch_utils.rewrite(user_db, 'base', '/users/org.couchdb.user:' + user_name, callback)
 
 users.handle_get_user = (req, resp) ->
   [user_name, params] = process_req(req)

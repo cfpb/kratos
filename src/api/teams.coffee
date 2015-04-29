@@ -105,14 +105,10 @@ teams.remove_member = (db, team_name, role, user_id, callback) ->
 teams.add_asset = (db, actor_name, team_name, resource, asset_data) ->
   # only returns a promise; no streaming/callback support
   users = require('./users')
-  if actor_name == conf.COUCHDB.SYSTEM_USER 
-    user_promise = Promise.resolve({name: conf.COUCHDB.SYSTEM_USER, roles: []})
-  else
-    user_promise = users.get_user(actor_name, 'promise')
 
   Promise.all([
     teams.get_team(db, team_name, 'promise'),
-    user_promise,
+    users.get_user(actor_name, 'promise'),
   ]).then(([team, actor]) ->
     isAuthorized = validation.auth.add_team_asset(actor, team, resource)
     if not isAuthorized
@@ -167,6 +163,64 @@ teams.handle_add_asset = (req, resp) ->
 teams.handle_remove_asset = (req, resp) ->
   [db, team_name, params] = process_req(req)
   teams.remove_asset(db, team_name, params.resource, params.asset_id).pipe(resp)
+
+teams.get_team_details = (team_ame, actor_name) ->
+  Promise.all([
+    teams.get_team(db, team_name, 'promise'),
+    users.get_user(actor_name, 'promise'),
+  ]).then(([team, actor]) ->
+
+    rsrcs_promises = {}
+    _.forEach(team.rsrcs, (resource_data, resource_name) -> 
+      detailHandler = resources[resource_name].getTeamAssetDetails
+      if detailHandler
+        rsrcs_promises[resource_name] = detailHandler(resource_data.assets, team, actor).then((asset_details) ->
+          zipped_assets = _.zip(resource_data.assets, asset_details)
+          assets = _.map(zipped_assets, ([asset_data, asset_details]) ->
+            asset_data.details = asset_details
+          )
+          return Promise.resolve(assets)
+        )
+      else
+        rsrcs_promises[resource_name] = Promise.resolve([])
+    )
+
+    Promise.hashAll(rsrcs_promises).then((rsrcs) ->
+      Promise.resolve({rsrcs: rsrcs})
+    )
+  )
+
+teams.handle_get_team_details = (req, resp) ->
+  [db, team_name, params] = process_req(req)  users = require('./users')
+  teams.get_team_details(team_name, req.session.user).then(
+    (team_details) ->
+      resp.send(JSON.stringify(team_details))
+    (err) ->
+      if err.statusCode
+        return resp.status(err.statusCode).send(JSON.stringify(_.pick(err, 'error', 'reason')))
+      else
+        return resp.status(500).send(JSON.stringify({error: 'server error', msg: 'something went wrong. please try again.'}))
+  )
+
+teams.handle_proxy_action = (req, resp) ->
+  [db, team_name, params] = process_req(req)  users = require('./users')
+
+  Promise.all([
+    teams.get_team(db, team_name, 'promise'),
+    users.get_user(req.session.user, 'promise'),
+  ]).then(([team, actor]) ->
+    resource = params.resource
+    assets = team.rsrcs?[resource]?.assets
+    asset = _.findWhere(assets, {id: params.asset_id})
+    if not asset
+      resp.status(404).send({error: "not_found", msg: 'Asset, ' + resource + ' ' + params.asset_id + ', not found.'})
+    try
+      validation.proxy_asset_action(actor, team, resource, asset, params.path, req.method, req.body, req)
+    catch (e)
+      status = {unauthorized: 401,  invalid: 403 }[e.state]
+      return resp.status(status).send(JSON.stringify({err: e.state, msg: e.err}))
+    return resources[resource].doAssetAction(actor, team, resource, asset, params.path, req.method, req.body, req, resp)
+  )
 
 
 module.exports = teams

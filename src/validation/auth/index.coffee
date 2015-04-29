@@ -58,6 +58,9 @@ auth = (validation) ->
     else
       return auth.kratos._is_kratos_admin(actor) or auth._is_team_admin(actor, team)
 
+  auth.proxy_asset_action = (actor, team, resource, asset, path, method, body, req) ->
+    return auth.is_active_user(actor) and auth[resource]?.proxy_asset_action?.apply(this, arguments) or false    
+
   auth.add_user = (actor) ->
     return auth.kratos._is_kratos_admin(actor)
   auth.remove_user = (actor) ->

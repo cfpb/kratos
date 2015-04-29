@@ -2,7 +2,7 @@ git = require('../../lib/workers/gh_client')
 users = require('../../lib/api/users')
 gh = require('../../lib/workers/gh')
 teams = require('../../lib/api/teams')
-auth = require('../../lib/validation/validate').auth
+auth = require('../../lib/validation').auth
 Promise = require('promise')
 
 onError = (err) -> console.log('ERR!!', err)

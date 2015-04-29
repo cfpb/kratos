@@ -6,5 +6,8 @@
 , "dependencies": 
   { "modules": null
   , "properties": null
+  , "underscore": null
+  , "pantheon-helpers": null
+  , "validoc": null
   }
 }

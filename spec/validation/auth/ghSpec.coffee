@@ -1,4 +1,4 @@
-auth = require('../../../lib/validation/validate').auth
+auth = require('../../../lib/validation').auth
 gh = auth.gh
 
 super_admin   = {name: 'admin'}

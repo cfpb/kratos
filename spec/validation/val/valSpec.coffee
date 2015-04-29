@@ -1,6 +1,6 @@
-validation = require('../../../lib/validation/validate').validation
+validation = require('../../../lib/validation').validation
 
-super_admin         = {name: 'admin'}
+system_user         = {name: 'admin'}
 team_admin          = {name: 'etkdg394hpmujn', roles: ['kratos|enabled']}
 team_gh_admin       = {name: 'nauhbkuwmkjvqq', roles: ['gh|user', 'kratos|enabled']}
 user                = {name: 'thubsn24joa5gk', roles: ['kratos|enabled']}
@@ -47,7 +47,7 @@ describe 'add_team_member', ->
     expect(() ->
       actual = validation.add_team_member(team, user, 'xxx')
     ).toThrow('invalid role: xxx')
-    
+
 describe 'add_resource_role', () ->
   it 'allowed when the user is enabled and the role exists', ->
     actual = validation.add_resource_role(user, 'gh', 'user')
@@ -66,8 +66,29 @@ describe 'remove_resource_role', () ->
     actual = validation.remove_resource_role(user, 'gh', 'user')
     expect(actual).toBeUndefined()
   it 'allowed if the resource role does not exist', () ->
-    actual = validation.remove_resource_role(super_admin, 'gh', 'xx')
+    actual = validation.remove_resource_role(system_user, 'gh', 'xx')
     expect(actual).toBeUndefined()
   it 'allowed if the user is not enabled', () ->
     actual = validation.remove_resource_role(disabled_user, 'gh', 'user')
     expect(actual).toBeUndefined()
+
+describe 'add_user_data', () ->
+  it 'not allowed when setting value not in system schema', () ->
+    old_user = {data: {username: 'user1'}}
+    new_user = {data: {username: 'user1', xxyyzz: true}}
+    expect(() ->
+      actual = validation.add_user_data(system_user, old_user, new_user)
+    ).toThrow()
+
+  it 'allowed when system sets contractor', () ->
+    old_user = {data: {username: 'user1'}}
+    new_user = {data: {username: 'user1', contractor: true}}
+    actual = validation.add_user_data(system_user, old_user, new_user)
+    expect(actual).toBeUndefined()
+
+  it 'not allowed when self sets contractor', () ->
+    old_user = {name: user.name, data: {username: 'user1'}}
+    new_user = {name: user.name, data: {username: 'user1', contractor: true}}
+    expect(() ->
+      actual = validation.add_user_data(user, old_user, new_user)
+    ).toThrow()

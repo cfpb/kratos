@@ -1,8 +1,8 @@
-_ = require('lib/underscore')
+_ = require('underscore')
 h = require('./helpers')
-validate = require('lib/validation/validate')
+validate = require('./validation/index')
 actions = require('./actions')
-audit = require('./shared/audit')
+audit = require('pantheon-helpers').design_docs.audit
 
 
 auth = validate.auth
@@ -17,7 +17,7 @@ dd =
             emit([resource_name, resource_id], doc.name)
     by_resource_username:
       map: (doc) ->
-        auth = require('views/lib/validation/validate').auth
+        auth = require('views/lib/auth')
         if not auth.is_active_user(doc)
           return
         for resource_name, resource of doc.rsrcs
@@ -26,17 +26,17 @@ dd =
             emit([resource_name, resource_username], doc.name)
     by_username:
       map: (doc) ->
-        auth = require('views/lib/validation/validate').auth
+        auth = require('views/lib/auth')
         if auth.is_active_user(doc) and doc.data.username
           emit(doc.data.username)
     by_name:
       map: (doc) ->
-        validate = require('views/lib/validation/validate')
-        if validate._is_user(doc)
-          emit([validate.auth.is_active_user(doc), doc.name])
+        auth = require('views/lib/auth')
+        if auth._is_user(doc)
+          emit([auth.is_active_user(doc), doc.name])
     by_auth:
       map: (doc) ->
-        auth = require('views/lib/validation/validate').auth
+        auth = require('views/lib/auth')
         if not auth.is_active_user(doc)
           return
         for role in doc.roles
@@ -45,7 +45,7 @@ dd =
           emit(out)
     contractors:
       map: (doc) ->
-        auth = require('views/lib/validation/validate').auth
+        auth = require('views/lib/auth')
         if auth.is_active_user(doc)
           emit(doc.data?.contractor or false, doc.data.username)
 

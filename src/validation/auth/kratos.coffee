@@ -10,7 +10,4 @@ kratos = (auth) ->
       return auth._is_resource_admin(actor, 'kratos')
 
 
-if window?
-  kratos(window.kratos.validation.auth)
-else if exports?
-  module.exports = kratos
+module.exports = kratos

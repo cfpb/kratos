@@ -1,5 +1,5 @@
 a = require('../../../lib/design_docs/org/lib/actions')
-h = require('pantheon-helpers/lib/design_docs/helpers')
+h = require('pantheon-helpers').design_docs.helpers
 
 actor = {name: 'actor1'}
 

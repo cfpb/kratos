@@ -4,8 +4,8 @@ couch_utils = require('../couch_utils')
 user_db = couch_utils.nano_system_user.use('_users')
 uuid = require('node-uuid')
 conf = require('../config')
-doAction = require('pantheon-helpers/lib/doAction')
-validate = require('../validation/validate')
+doAction = require('pantheon-helpers').doAction
+validate = require('../validation')
 
 users = {}
 
@@ -99,6 +99,7 @@ users.handle_add_data = (req, resp) ->
   users.add_data(req.couch, user_name, path, data).pipe(resp)
 
 users.reactivate_user = (client, user_name, callback) ->
+  user_id = 'org.couchdb.user:' + user_name
   doAction(client.use('_users'), 'base', user_id, {
     a: 'u+',
   }, callback)

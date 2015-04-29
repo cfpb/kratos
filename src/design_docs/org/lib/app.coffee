@@ -1,8 +1,8 @@
-_ = require('./underscore')
+_ = require('underscore')
 h = require('./helpers')
-validate = require('./validation/validate')
+validate = require('./validation/index')
 actions = require('./actions')
-audit = require('./shared/audit')
+audit = require('pantheon-helpers').design_docs.audit
 
 auth = validate.auth
 
@@ -10,8 +10,8 @@ dd =
   views:
     by_role:
       map: (doc) ->
-        validate = require('views/lib/validation/validate')
-        if not validate._is_team(doc)
+        auth = require('views/lib/auth')
+        if not auth._is_team(doc)
           return
         team_id = doc._id.slice(5)
         for role_name, role_data of doc.roles

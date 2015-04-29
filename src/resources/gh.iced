@@ -1,6 +1,6 @@
 conf = require('../config')
 
-gh_conf = conf.RESOURCES.G
+gh_conf = conf.RESOURCES.GH
 request = require('request')
 parse_links = require('parse-links')
 couch_utils = require('../couch_utils')

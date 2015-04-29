@@ -3,7 +3,7 @@ conf = require('../config')
 
 gh_conf = conf.RESOURCES.GH
 path = require('path')
-Promise = require('pantheon-helpers/lib/promise')
+Promise = require('pantheon-helpers').promise
 {exec} = require('child_process')
 exec = Promise.denodeify(exec)
 {mkdir} = require('fs')

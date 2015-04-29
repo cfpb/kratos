@@ -1,10 +1,7 @@
-try
-  h = require('./shared/helpers')
-catch
-  h = require('pantheon-helpers/lib/design_docs/helpers')
+h = require('pantheon-helpers').design_docs.helpers
 
 h.sanitize_user = (user) ->
-  _ = require('lib/underscore')
+  _ = require('underscore')
   sanitized_user = _.clone(user)
   delete sanitized_user.password_scheme
   delete sanitized_user.iterations

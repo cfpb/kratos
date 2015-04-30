@@ -47,7 +47,7 @@ describe 'getTeamKeys', () ->
               name: 'test2',
             },
           ]
-    spyOn(users, 'get_users_by_name').andReturn(Promise.resolve({rows:[
+    spyOn(users, 'get_users').andReturn(Promise.resolve([
       {
         _id: 'org.couchdb.user:member1',
         doc: {
@@ -83,12 +83,12 @@ describe 'getTeamKeys', () ->
           }
         }
       }
-    ]}))
+    ]))
 
-  it 'calls get_users_by_name', (done) ->
+  it 'calls get_users', (done) ->
     moirai.testing.getTeamKeys(this.team).then(() =>
       userList = ['member1', 'member2', 'member3', 'member4']
-      expect(users.get_users_by_name).toHaveBeenCalledWith(userList, 'promise')
+      expect(users.get_users).toHaveBeenCalledWith({names: userList}, 'promise')
       done()
     )
 

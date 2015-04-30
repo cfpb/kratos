@@ -18,11 +18,21 @@ isInt = (s) ->
   return String(parseInt(s)) == s
 
 users.get_users = (opts, callback) ->
+  ###
+  opts:
+    all - return all users including deactivated users 
+          (default: false - return only active users)
+    names - return only those active users with the names specified in the list
+  
+  names will override all    
+  ###
   if typeof(opts) == 'function' or opts == 'promise'
     callback = opts
   opts or= {}
   params = {include_docs: 'true'}
-  if opts.all not in ['true', true]
+  if opts.names
+    params.keys = opts.names.map((name) -> [true, name])
+  else if opts.all not in ['true', true]
     _.extend(params, {
       startkey: [true],
       endkey: [true, {}],
@@ -45,19 +55,6 @@ users.handle_get_users = (req, resp) ->
       .pipe(resp)
   else
     users.get_users(req.query).pipe(resp)
-
-users.get_users_by_name = (names, callback) ->
-  ids = names.map((name) ->
-    return 'org.couchdb.user:'+name
-  )
-  user_db.list({keys: ids, include_docs: true}, callback)
-
-users.handle_get_users_by_name = (req, resp) ->
-  users = req.body
-  if _.isArray(users)
-    return users.get_user(user_name).pipe(resp)
-  else
-    resp.status(400).end(JSON.stringify({'error': 'bad_request ', 'msg': 'data must be an array - []'}))
 
 users.get_user = (user_name, callback) ->
   return couch_utils.rewrite(user_db, 'base', '/users/org.couchdb.user:' + user_name, callback)

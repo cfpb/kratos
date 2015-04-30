@@ -4,12 +4,12 @@ teams = require('../api/teams')
 auth = require('../validation').auth
 Promise = require('pantheon-helpers/lib/promise')
 conf = require('../config')
-
+moiraiConf = conf.RESOURCES.MOIRAI
 moirai = {}
 
 moirai.moiraiClient = Promise.RestClient({
-  url: conf.MOIRAI.URL,
-  auth: conf.MOIRAI.ADMIN_CREDENTIALS,
+  url: moiraiConf.URL,
+  auth: moiraiConf.ADMIN_CREDENTIALS,
   json: true
 })
 
@@ -25,8 +25,8 @@ moirai.getTeamKeys = (team) ->
   adminNames = team.roles.admin?.members or []
   memberNames = team.roles.member?.members or []
   allMemberNames = _.unique(adminNames.concat(memberNames))
-  users.get_users_by_name(allMemberNames, 'promise').then((userList) ->
-    keyList = userList.rows.map((user) ->
+  users.get_users({names: allMemberNames}, 'promise').then((userList) ->
+    keyList = userList.map((user) ->
       return _.findWhere(user.doc.data.publicKeys or [], {name: 'moirai'})
     )
     return Promise.resolve(_.compact(keyList).map((key) -> key.key))

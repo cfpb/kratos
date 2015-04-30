@@ -67,5 +67,6 @@ validation = (validation) ->
         throw('Modifications not allowed by schema')
 
   require('./gh')(validation.validation)
+  require('./moirai')(validation.validation)
 
 module.exports = validation

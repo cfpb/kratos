@@ -107,7 +107,7 @@ handle_create_team = (event, team) ->
   )
 
 get_gh_team_ids = (user) ->
-  teams_api.get_all_team_roles_for_user(user).then((team_roles) ->
+  teams_api.get_all_team_roles_for_user(user.name).then((team_roles) ->
     gh_team_ids = team_roles.map((team_role) ->
       return get_gh_team_id(team_role.team, user, team_role.role)
     )
@@ -136,7 +136,7 @@ handle_deactivate_user = (event, user) ->
       Promise.resolve()
   ).then(emptyResolve)
 
-add_asset = (asset_data, team) ->
+get_or_create_asset = (asset_data, team) ->
   repo_name = asset_data.new
   # first look through and make sure the repo hasn't already been added
   existing_repo = _.findWhere(team.rsrcs.gh?.assets, {'name': repo_name})
@@ -174,5 +174,5 @@ module.exports =
         'r-': null
       'u+': null
       'u-': handle_deactivate_user
-  add_asset: add_asset
+  getOrCreateAsset: get_or_create_asset
   testing: gh

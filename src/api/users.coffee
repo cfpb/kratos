@@ -18,11 +18,21 @@ isInt = (s) ->
   return String(parseInt(s)) == s
 
 users.get_users = (opts, callback) ->
+  ###
+  opts:
+    all - return all users including deactivated users 
+          (default: false - return only active users)
+    names - return only those active users with the names specified in the list
+  
+  names will override all    
+  ###
   if typeof(opts) == 'function' or opts == 'promise'
     callback = opts
   opts or= {}
   params = {include_docs: 'true'}
-  if opts.all not in ['true', true]
+  if opts.names
+    params.keys = opts.names.map((name) -> [true, name])
+  else if opts.all not in ['true', true]
     _.extend(params, {
       startkey: [true],
       endkey: [true, {}],

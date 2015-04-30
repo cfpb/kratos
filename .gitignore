@@ -1,7 +1,8 @@
 # Node #
 ########
-/lib/config_secret.js
-/src/config_secret.coffee
+
+*secret*
+!*secret*example
 /template_repo
 
 # Compiled source #

@@ -253,10 +253,11 @@ describe 'getOrCreateAsset', () ->
     spyOn(moirai.testing.moiraiClient, 'post').andCallFake((assetData, team) ->
       return Promise.resolve({
         _id: 'cluster_id'
-        name: assetData.json.name+'2' #slightly tweak provided name
+        name: assetData.json.name
       })
     )
     this.team =
+      name: 'team1 name!'
       rsrcs:
         moirai:
           assets: [
@@ -264,21 +265,37 @@ describe 'getOrCreateAsset', () ->
             cluster_id: 'cluster_test1',
             name: "test1",
           ]
+    this.actor =
+      data:
+        username: 'actorName'
+        email: 'emailAddress'
 
   it 'does nothing if the cluster already exists', (done) ->
-    moirai.getOrCreateAsset({name: 'test1'}, this.team).then((resp) ->
+    moirai.getOrCreateAsset({name: 'test1'}, this.team, this.actor).then((resp) ->
       expect(moirai.testing.moiraiClient.post).not.toHaveBeenCalled()
       expect(resp).toBeUndefined()
       done()
     )
 
   it "gets/creates a repo, and returns the details to store in couch", (done) ->
-    moirai.getOrCreateAsset({name: 'test2'}, this.team).then((resp) ->
+    moirai.getOrCreateAsset({new: 'app name123'}, this.team, this.actor).then((resp) =>
       expect(moirai.testing.moiraiClient.post).toHaveBeenCalledWith({
         url: '/moirai/clusters',
-        json: {name: 'test2'},
+        json: {
+          name: 'app name123'
+          instances: [{
+            tags: {
+              Name: 'moirai-team1-name-app-name123'
+              Application: 'app name123'
+              BusinessOwner: 'team1 name!'
+              Creator: this.actor.data.username
+            }
+          }]
+        },
         body_only: true
       })
-      expect(resp).toEqual({cluster_id: 'cluster_id', name: 'test22'})
+      expect(resp).toEqual({cluster_id: 'cluster_id', name: 'app name123'})
       done()
+    ).catch((err) ->
+      done(err)
     )

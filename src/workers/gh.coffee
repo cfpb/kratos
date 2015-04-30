@@ -136,7 +136,7 @@ handle_deactivate_user = (event, user) ->
       Promise.resolve()
   ).then(emptyResolve)
 
-get_or_create_asset = (asset_data, team) ->
+get_or_create_asset = (asset_data, team, actor) ->
   repo_name = asset_data.new
   # first look through and make sure the repo hasn't already been added
   existing_repo = _.findWhere(team.rsrcs.gh?.assets, {'name': repo_name})

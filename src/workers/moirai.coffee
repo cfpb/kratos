@@ -4,6 +4,7 @@ teams = require('../api/teams')
 auth = require('../validation').auth
 Promise = require('pantheon-helpers/lib/promise')
 conf = require('../config')
+slug = require('slug')
 moiraiConf = conf.RESOURCES.MOIRAI
 moirai = {}
 
@@ -27,7 +28,7 @@ moirai.getTeamKeys = (team) ->
   allMemberNames = _.unique(adminNames.concat(memberNames))
   users.get_users({names: allMemberNames}, 'promise').then((userList) ->
     keyList = userList.map((user) ->
-      return _.findWhere(user.doc.data.publicKeys or [], {name: 'moirai'})
+      return _.findWhere(user.data.publicKeys or [], {name: 'moirai'})
     )
     return Promise.resolve(_.compact(keyList).map((key) -> key.key))
   )
@@ -79,14 +80,26 @@ handleAddData = (event, user) ->
     return Promise.resolve()
 
 
-getOrCreateAsset = (assetData, team) ->
+getOrCreateAsset = (assetData, team, actor) ->
   url = '/moirai/clusters'
   clusters = team.rsrcs.moirai?.assets or []
   existingClusterWithName = _.findWhere(clusters, {name: assetData.name})
   if existingClusterWithName?
     return Promise.resolve()
   else
-    return moirai.moiraiClient.post({url: url, json: assetData, body_only: true}).then((newClusterData) ->
+    moiraiData = {
+      name: assetData.new,
+      instances: [{
+        tags: {
+            Name: slug('moirai-' + team.name + '-' + assetData.new)
+            Application: assetData.new
+            BusinessOwner: team.name
+            Creator: actor.data?.username or actor.name
+        }
+      }]
+    }
+
+    return moirai.moiraiClient.post({url: url, json: moiraiData, body_only: true}).then((newClusterData) ->
       Promise.resolve({
         cluster_id: newClusterData._id,
         name: newClusterData.name,

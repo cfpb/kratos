@@ -122,7 +122,7 @@ teams.add_asset = (db, actor_name, team_name, resource, asset_data) ->
     if not handler
       return Promise.reject({code: 404, error: "not_found", msg: 'Resource, ' + resource + ', not found.'})
 
-    handler(asset_data, team).then((new_asset) ->
+    handler(asset_data, team, actor).then((new_asset) ->
       if not new_asset?  # no change
         return Promise.resolve(team)
       else

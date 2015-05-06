@@ -164,7 +164,8 @@ teams.handle_remove_asset = (req, resp) ->
   [db, team_name, params] = process_req(req)
   teams.remove_asset(db, team_name, params.resource, params.asset_id).pipe(resp)
 
-teams.get_team_details = (team_ame, actor_name) ->
+teams.get_team_details = (db, team_name, actor_name) ->
+  users = require('./users')
   Promise.all([
     teams.get_team(db, team_name, 'promise'),
     users.get_user(actor_name, 'promise'),
@@ -191,8 +192,8 @@ teams.get_team_details = (team_ame, actor_name) ->
   )
 
 teams.handle_get_team_details = (req, resp) ->
-  [db, team_name, params] = process_req(req)  users = require('./users')
-  teams.get_team_details(team_name, req.session.user).then(
+  [db, team_name, params] = process_req(req)
+  teams.get_team_details(db, team_name, req.session.user).then(
     (team_details) ->
       resp.send(JSON.stringify(team_details))
     (err) ->

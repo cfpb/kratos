@@ -109,7 +109,7 @@ getOrCreateAsset = (assetData, team, actor) ->
     )
 
 getTeamAssetDetails = (assets, team, actor) ->
-  query = {clusterIds: _.pluck(assets, 'couch_id')}
+  query = {clusterIds: _.pluck(assets, 'cluster_id')}
   url = '/moirai/clusters?' + querystring.stringify(query)
   moirai.moiraiClient.get({url: url, body_only: true})
 

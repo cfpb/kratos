@@ -6,6 +6,8 @@ Promise = require('pantheon-helpers/lib/promise')
 conf = require('../config')
 slug = require('slug')
 moiraiConf = conf.RESOURCES.MOIRAI
+querystring = require('querystring')
+
 moirai = {}
 
 moirai.moiraiClient = Promise.RestClient({
@@ -101,10 +103,15 @@ getOrCreateAsset = (assetData, team, actor) ->
 
     return moirai.moiraiClient.post({url: url, json: moiraiData, body_only: true}).then((newClusterData) ->
       Promise.resolve({
-        cluster_id: newClusterData._id,
+        cluster_id: newClusterData._id.slice(8),
         name: newClusterData.name,
       })
     )
+
+getTeamAssetDetails = (assets, team, actor) ->
+  query = {clusterIds: _.pluck(assets, 'couch_id')}
+  url = '/moirai/clusters?' + querystring.stringify(query)
+  moirai.moiraiClient.get({url: url, body_only: true})
 
 module.exports =
   handlers:
@@ -130,4 +137,5 @@ module.exports =
       'u-': null
       'd+': handleAddData
   getOrCreateAsset: getOrCreateAsset
+  getTeamAssetDetails: getTeamAssetDetails
   testing: moirai

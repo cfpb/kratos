@@ -216,7 +216,7 @@ teams.handle_proxy_action = (req, resp) ->
       resp.status(404).send({error: "not_found", msg: 'Asset, ' + resource + ' ' + params.asset_id + ', not found.'})
     try
       validation.proxy_asset_action(actor, team, resource, asset, params.path, req.method, req.body, req)
-    catch (e)
+    catch e
       status = {unauthorized: 401,  invalid: 403 }[e.state]
       return resp.status(status).send(JSON.stringify({err: e.state, msg: e.err}))
     return resources[resource].doAssetAction(actor, team, resource, asset, params.path, req.method, req.body, req, resp)

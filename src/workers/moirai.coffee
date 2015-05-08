@@ -28,6 +28,7 @@ moirai.getTeamKeys = (team) ->
   adminNames = team.roles.admin?.members or []
   memberNames = team.roles.member?.members or []
   allMemberNames = _.unique(adminNames.concat(memberNames))
+  console.log('getTeamKeys', allMemberNames, users.get_users)
   users.get_users({names: allMemberNames}, 'promise').then((userList) ->
     keyList = userList.map((user) ->
       return _.findWhere(user.data.publicKeys or [], {name: 'moirai'})

@@ -175,9 +175,10 @@ teams.get_team_details = (db, team_name, actor_name) ->
     _.forEach(team.rsrcs, (resource_data, resource_name) -> 
       detailHandler = resources[resource_name].getTeamAssetDetails
       if detailHandler
-        rsrcs_promises[resource_name] = detailHandler(resource_data.assets, team, actor).then((asset_details) ->
-          zipped_assets = _.zip(resource_data.assets, asset_details)
-          assets = _.map(zipped_assets, ([asset_data, asset_details]) ->
+        assets = resource_data.assets
+        rsrcs_promises[resource_name] = detailHandler(assets, team, actor).then((asset_details) ->
+          zipped_assets = _.zip(assets, asset_details)
+          _.each(zipped_assets, ([asset_data, asset_details]) ->
             asset_data.details = asset_details
           )
           return Promise.resolve(assets)
@@ -197,6 +198,7 @@ teams.handle_get_team_details = (req, resp) ->
     (team_details) ->
       resp.send(JSON.stringify(team_details))
     (err) ->
+      console.log('handle_get_team_details error', team_name, err)
       if err.statusCode
         return resp.status(err.statusCode).send(JSON.stringify(_.pick(err, 'error', 'reason')))
       else

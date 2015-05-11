@@ -1,6 +1,6 @@
 conf = require('./config')
 couch_utils = require('pantheon-helpers').couch_utils(conf)
-Promise = require('promise')
+Promise = require('pantheon-helpers').promise
 _ = require('underscore')
 
 couch_utils.map = (db, fn) ->

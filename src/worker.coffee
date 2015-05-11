@@ -8,7 +8,7 @@ validate = require('./validation')
 orgs = conf.ORGS
 
 handlers = {
-  gh: require('./workers/gh').handlers,
+  #gh: require('./workers/gh').handlers,
   moirai: require('./workers/moirai').handlers,
 }
 

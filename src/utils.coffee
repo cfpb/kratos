@@ -1,7 +1,7 @@
 _ = require('underscore')
 s = require('underscore.string')
 couch_utils = require('./couch_utils')
-Promise = require('promise')
+Promise = require('pantheon-helpers').promise
 
 x = {}
 

@@ -1,0 +1,11 @@
+{
+    "name": "pantheon-helpers",
+    "version": "0.1.0",
+    "url": "https://github.com/cfpb/pantheon-helpers",
+    "modules": ["lib/pantheon-helpers-design-docs", "pantheon-helpers.js"],
+    "dependencies": {
+        "modules": null,
+        "underscore": null
+    },
+    "description": "A small Node.js library to make it easier to build a microservice in Node.js with CouchDB."
+}

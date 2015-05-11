@@ -1,0 +1,60 @@
+#! /usr/bin/env node
+
+
+var fs = require('fs'),
+    exec = require('child_process').exec,
+    Promise = require('./lib/promise'),
+    prompt = require('prompt');
+    path = require('path');
+
+prompt_get = Promise.denodeify(prompt.get).bind(prompt);
+exec = Promise.denodeify(exec);
+
+DIR = __dirname;
+PROJ_DIR = path.normalize(path.join(DIR, '..', '..'));
+TEMPLATE_DIR = path.join(DIR, 'templates/project');
+
+bootstrap_cli = function () {
+  console.log('\n');
+  prompt.start();
+  prompt_get({
+    properties: {
+      'continue': {
+        description: "Bootstrap may overwrite existing files in your project dir (" + PROJ_DIR + "). Continue?".magenta
+      }
+    }
+  }).then(function (resp) {
+    if (['y', 'yes'].indexOf(resp.continue.toLowerCase()) < 0) {
+      throw('\nBOOTSTRAP ABORTED.');
+    }
+    console.log();
+    return bootstrap();
+  }).then(function() {
+    console.log('\nBOOTSTRAP COMPLETE.');
+    console.log('\nPlease update your package.json to include name/description/author info.\n');
+  }).catch(function(err) {console.log(err);});
+};
+
+bootstrap = function() {
+  console.log('Copying files...');
+  return exec('cp -r ' + path.join(TEMPLATE_DIR, '*') + ' ' + PROJ_DIR).then(function () {
+    console.log('Cleaning up...');
+
+    var cleanup = ['src', 'lib', 'spec'].map(function(subdir) {
+      var subdir_path = path.join(PROJ_DIR, subdir);
+      return exec("find . -type f -name '.empty' -exec rm {} +", {cwd: subdir_path});
+    });
+    return Promise.all(cleanup);
+  }).then(function() {
+    console.log('\nInstalling npm dependencies...');
+    return exec("npm install .", {cwd: PROJ_DIR});
+  }).then(function () {
+    console.log('\nBuilding coffeescript...');
+    return exec("cake build", {cwd: PROJ_DIR});
+  });
+};
+
+if (require.main === module)
+  bootstrap_cli();
+else
+  module.exports = bootstrap;

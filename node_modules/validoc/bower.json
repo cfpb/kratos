@@ -1,0 +1,19 @@
+{
+  "name": "validoc",
+  "version": "0.4.0",
+  "private": false,
+  "ignore": [
+    ".gitignore",
+    ".travis.yml",
+    "Cakefile",
+    "LICENCE.md",
+    "README.md",
+    "package.json",
+    "src",
+    "spec",
+    "node_modules"
+  ],
+  "dependencies": 
+  { "underscore": "~1.7.0"
+  }
+}

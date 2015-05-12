@@ -130,8 +130,8 @@ c =
         push_repo_url = get_authenticated_repo_url(repo_data.clone_url)
         exec('git push "' + push_repo_url + '" master', {cwd: TEMPLATE_DIR})
       ).catch((err) ->
-        console.error('we had an error')
-        pushTemplate(repo_data)
+        console.error('pushTemplate error', err)
+        c.repo.pushTemplate(repo_data)
       ).then(() ->
         Promise.resolve(repo_data)
       )

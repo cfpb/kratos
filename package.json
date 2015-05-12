@@ -15,7 +15,6 @@
     "nano": "6.0.2",
     "node-uuid": "1.4.2",
     "parse-links": "0.1.0",
-    "promise": "^6.1.0",
     "request": "2.49.0",
     "slug": "0.9.1",
     "underscore": "1.7.0",

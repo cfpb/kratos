@@ -5,6 +5,6 @@
   },
   "members": {
     "names": [],
-    "roles": []
+    "roles": ["kratos|enabled"]
   }
 }

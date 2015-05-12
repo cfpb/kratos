@@ -1,12 +1,27 @@
 fields = require('validoc').fields
 
+class PubKeyField extends fields.RegexField
+  ###
+  A field that contains a valid public key.
+  ###
+  # currently tests for:
+  #  - start with 'ssh-rsa AAAA'
+  #  - body is limited to alphanumerics + "/" + "+"
+  #  - the cryptokey ends with 0-3 "="
+  #  - the body ends with a user label approximating an email address.
+  regex: /^ssh-rsa AAAA[0-9A-Za-z+/]+[=]{0,3} [0-9A-Za-z.-]+(@[0-9A-Za-z.-]+)?$/
+  errorMessage: "invalid public key"
+
+fields.PubKeyField = PubKeyField;
+
+
 user_data = (schema) ->
   pubKeyField = {
     name: 'publicKey',
     field: 'ContainerField',
     schema: [ 
       { name: 'name', field: 'CharField', maxLength: 20},
-      { name: 'key', field: 'CharField', maxLength: 500},
+      { name: 'key', field: 'PubKeyField'},
     ]
   }
 

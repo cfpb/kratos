@@ -41,6 +41,10 @@ validation =
   remove_team_member: (actor, team, user, role) ->
     validation._validate('remove_team_member', [actor, team, role], [team, user, role])
 
+  proxy_asset_action: (actor, team, resource, asset, path, method, body, req) ->
+    validation._validate('proxy_asset_action', arguments, arguments)
+
+
   add_user: (actor, user) ->
     validation._validate('add_user', [actor], [user])
 

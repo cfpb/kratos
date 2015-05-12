@@ -4,7 +4,8 @@ moirai = require('../../lib/workers/moirai')
 Promise = require('promise')
 _ = require('underscore')
 
-onError = (err) -> console.log('ERR!!', err)
+onError = (done) ->
+  (err) -> done(err)
 
 describe 'setClusterKeys', () ->
   it 'sends the cluster and keys to the moirai API', (done) ->
@@ -48,39 +49,32 @@ describe 'getTeamKeys', () ->
             },
           ]
     spyOn(users, 'get_users').andReturn(Promise.resolve([
+
       {
         _id: 'org.couchdb.user:member1',
-        doc: {
-          data: {
-            publicKeys: [{name: 'moirai', key: 'keyvalue1'}]
-          }
+        data: {
+          publicKeys: [{name: 'moirai', key: 'keyvalue1'}]
         }
       },
       {
         _id: 'org.couchdb.user:member2',
-        doc: {
-          data: {
-            publicKeys: [{name: 'not-moirai', key: 'keyvalue2'}]
-          }
+        data: {
+          publicKeys: [{name: 'not-moirai', key: 'keyvalue2'}]
         }
       },
       {
         _id: 'org.couchdb.user:member3',
-        doc: {
-          data: {
-            publicKeys: []
-          }
+        data: {
+          publicKeys: []
         }
       },
       {
         _id: 'org.couchdb.user:member3',
-        doc: {
-          data: {
-            publicKeys: [
-              {name: 'moirai', key: 'keyvalue4'},
-              {name: 'moirai', key: 'keyvalue4.2'}
-            ]
-          }
+        data: {
+          publicKeys: [
+            {name: 'moirai', key: 'keyvalue4'},
+            {name: 'moirai', key: 'keyvalue4.2'}
+          ]
         }
       }
     ]))
@@ -90,32 +84,32 @@ describe 'getTeamKeys', () ->
       userList = ['member1', 'member2', 'member3', 'member4']
       expect(users.get_users).toHaveBeenCalledWith({names: userList}, 'promise')
       done()
-    )
+    ).catch(onError(done))
 
   it 'gets a valid key where the name is moirai', (done) ->
     moirai.testing.getTeamKeys(this.team).then((result) =>
       expect(_.contains(result, 'keyvalue1')).toEqual(true)
       done()
-    )
+    ).catch(onError(done))
 
   it 'does not get a key if the name is not moirai', (done) ->
     moirai.testing.getTeamKeys(this.team).then((result) =>
       expect(_.contains(result, 'keyvalue2')).toEqual(false)
       done()
-    )
+    ).catch(onError(done))
 
   it 'only gets one moirai key per person', (done) ->
     moirai.testing.getTeamKeys(this.team).then((result) =>
       expect(_.contains(result, 'keyvalue4')).toEqual(true)
       expect(_.contains(result, 'keyvalue4.2')).toEqual(false)
       done()
-    )
+    ).catch(onError(done))
 
   it 'gets the appropriate number of keys', (done) ->
     moirai.testing.getTeamKeys(this.team).then((result) =>
       expect(result.length).toEqual(2)
       done()
-    )
+    ).catch(onError(done))
 
 describe 'setTeamKeys', () ->
   beforeEach () ->
@@ -294,7 +288,7 @@ describe 'getOrCreateAsset', () ->
         },
         body_only: true
       })
-      expect(resp).toEqual({cluster_id: 'cluster_id', name: 'app name123'})
+      expect(resp).toEqual({cluster_id: 'id', name: 'app name123'})
       done()
     ).catch((err) ->
       done(err)

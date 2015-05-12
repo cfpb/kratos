@@ -45,6 +45,12 @@ validation = (validation) ->
         throw('invalid role: ' + role)
     remove_resource_role: (user, resource, role) ->
 
+    proxy_asset_action: (actor, team, resource, asset, path, method, body, req) ->
+      if not validation.validation[resource]?.proxy_asset_action?
+        throw('resource, ' + resource + ', does not support this action')
+      validation.validation[resource]?.proxy_asset_action?.apply(this, arguments) or false    
+
+
     add_user_data: (actor, old_user, new_user) ->
       old_data = old_user.data
       new_data = new_user.data

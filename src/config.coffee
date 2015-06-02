@@ -1,17 +1,4 @@
-_deepExtend = (target, source) ->
-  ###
-  recursively extend an object.
-  does not recurse into arrays
-  ###
-  for k, sv of source
-    tv = target[k]
-    if tv instanceof Array
-      target[k] = sv
-    else if typeof(tv) == 'object' and typeof(sv) == 'object'
-      target[k] = _deepExtend(tv, sv)
-    else
-      target[k] = sv
-  return target
+deepExtend = require('pantheon-helpers').utils.deepExtend
 
 try
     config_secret = require('./config_secret')
@@ -43,8 +30,26 @@ config =
   SECRET_KEY: undefined # secret key for hmac
   COUCH_PWD: undefined # couchdb password
   ORGS: []
+  LOGGERS:
+    WEB:
+      streams: [{
+        path: '/var/log/kratos/web-error.log',
+        level: "error",
+      },
+      {
+        path: '/var/log/kratos/web.log'
+        level: "info",
+      }]
+    WORKER:
+      streams: [{
+        path: '/var/log/kratos/worker-error.log',
+        level: "error",
+      },
+      {
+        path: '/var/log/kratos/worker.log',
+        level: "info",
+      }]
 
-
-_deepExtend(config, config_secret)
+deepExtend(config, config_secret)
 
 module.exports = config

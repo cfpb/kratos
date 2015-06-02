@@ -24,7 +24,7 @@ task 'runtestserver', 'Run the server (port 5000); restart on change', (options)
   cp = exec "iced --watch --output ./lib/ ./src/"
   cp.stdout.pipe(process.stdout)
   cp.stderr.pipe(process.stderr)
-  cp = exec "supervisor -w ./lib ./lib/app.js"
+  cp = exec "nodemon --watch ./lib --ignore ./lib/design_docs ./lib/app.js"
   cp.stdout.pipe(process.stdout)
   cp.stderr.pipe(process.stderr)
 
@@ -55,6 +55,8 @@ option '-n', '--db_name [name]', 'db name to import to'
 
 task 'import_from_gh', 'Import from Github - not idempotent!!', (options) ->
   db_name = options.db_name
+  if not db_name
+    throw(new Error('must specify db_name with `-n` or `--db_name`'))
   users_api = require('./lib/api/users')
   users_api.get_users('promise').then((users) ->
     if users.length

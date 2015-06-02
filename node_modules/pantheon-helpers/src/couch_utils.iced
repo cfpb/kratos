@@ -29,7 +29,7 @@ module.exports = (conf) ->
     await x.sync_design_docs(db_name, design_docs, security_doc, defer(err, resp))
     if err
       return callback?(err, resp)
-    return callback()
+    return callback?()
 
   x.ensure_db = (db, method, args...) ->
     ###

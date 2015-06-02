@@ -28,7 +28,7 @@ task 'runtestserver', 'Run the server (port 5000); restart on change', (options)
   cp = exec "coffee --watch --output ./lib/ ./src/"
   cp.stdout.pipe(process.stdout)
   cp.stderr.pipe(process.stderr)
-  cp = exec "supervisor -w ./lib ./lib/app.js"
+  cp = exec "nodemon --watch ./lib ./lib/app.js"
   cp.stdout.pipe(process.stdout)
   cp.stderr.pipe(process.stderr)
 

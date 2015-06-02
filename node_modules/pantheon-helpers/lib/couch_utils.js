@@ -78,7 +78,7 @@
             if (err) {
               return typeof callback === "function" ? callback(err, resp) : void 0;
             }
-            return callback();
+            return typeof callback === "function" ? callback() : void 0;
           });
         };
       })(this));

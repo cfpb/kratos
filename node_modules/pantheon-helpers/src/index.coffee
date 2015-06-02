@@ -1,5 +1,6 @@
 module.exports =
   couch_utils: require('./couch_utils')
+  loggers: require('./loggers')
   doAction: require('./doAction')
   middleware: require('./middleware')
   promise: require('./promise')

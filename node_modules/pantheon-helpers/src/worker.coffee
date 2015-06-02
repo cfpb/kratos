@@ -2,7 +2,7 @@ _ = require('underscore')
 follow = require('follow')
 utils = require('./utils')
 Promise = require('promise')
-
+logger = require('./loggers').worker
 x = {}
 
 clone = (obj) ->
@@ -83,39 +83,71 @@ x.update_audit_entries = (db, doc_id, results) ->
   )
 
 
-x.on_change = (db, handlers, get_doc_type, get_handlers) ->
+x.on_change = (logger, db, handlers, get_doc_type, get_handlers) ->
   return (change) ->
     doc = change.doc
     doc_type = get_doc_type(doc)
     unsynced_audit_entries = x.get_unsynced_audit_entries(doc)
+    
+    docLog = logger.child({docId: doc._id, rev: doc._rev})
+    if not unsynced_audit_entries.length
+      docLog.info({unsyncedActions: unsynced_audit_entries}, 'skip handling actions')
+      return
+    docLog.info({unsyncedActions: unsynced_audit_entries}, 'start handling actions')
 
     entry_promises = {}
     _.each(unsynced_audit_entries, (entry) ->
       entry_handlers = get_handlers(handlers, entry, doc_type)
       handler_promises = {}
-      _.each(entry_handlers, (handler, rsrc) ->
-        handler_promises[rsrc] = handler(clone(entry), clone(doc))
+
+      actionLog = docLog.child({actionId: entry.id, actionType: entry.a})
+      actionLog.info({
+        event: 'onChange',
+        handlers: _.keys(entry_handlers)
+      }, 'start running action handlers')
+
+      _.each(entry_handlers, (handler, handlerName) ->
+        handlerLog = actionLog.child({handlerName: handlerName})
+        handler_promises[handlerName] = handler(clone(entry),
+                                         clone(doc),
+                                         handlerLog
+                                        )
       )
       entry_promises[entry.id] = Promise.hashResolveAll(handler_promises)
     )
     Promise.hashAll(entry_promises).then((results) ->
       # results is a hash of type:
       # {entry_id: {resource: {state: "resolved|rejected", value|error: "result"}}}
-      x.update_audit_entries(db, doc._id, results)
-      if _.find(results, (result) -> _.findWhere(result, {state: 'rejected'}))
-        console.log('ERR', change.doc, unsynced_audit_entries, results)
+      x.update_audit_entries(db, doc._id, results).then(() ->
+        failed = 0
+        succeeded = 0
+        _.each(results, (actionResults, actionId) ->
+          [resolved, rejected] = sortErrorResults(actionResults)
+          actionLog = docLog.child({actionId: actionId})
+          if _.isEmpty(rejected)
+            actionLog.info({succeeded: resolved}, 'finish running handlers')
+            succeeded++
+          else
+            actionLog.error({failed: rejected, succeeded: resolved}, 'finish running handlers')
+            failed++
+        )
+        if failed
+          docLog.error({succeeded: succeeded, failed: failed}, 'finish handling actions')
+        else
+          docLog.info({succeeded: succeeded}, 'finish handling actions')
+      )
     ).catch((err) ->
-      console.log('ERR', err)
+      docLog.error({error: err}, 'finish handling actions')
     )
 
 
-x.start_worker = (db, handlers, get_doc_type, get_handlers=x.get_handlers) ->
+x.start_worker = (logger, db, handlers, get_doc_type, get_handlers=x.get_handlers) ->
   ###
   start a worker that watches a db for changes and calls the appropriate handlers.
   db: the nano database to watch
   handlers: a hash of handlers. Each handler should handle a different action.
-  get_handler_data_path: a function that return a path array into the document where data returned by the handler should be stored.
   get_doc_type: a function that returns the document type. this can be used to look up the appropriate handler.
+  get_handlers: a function that returns the worker handlers to handle an unhandled event.
   ###
   opts = 
     db: db.config.url + '/' + db.config.db
@@ -129,13 +161,23 @@ x.start_worker = (db, handlers, get_doc_type, get_handlers=x.get_handlers) ->
     else
       return true
 
-  feed.on 'change', x.on_change(db, handlers, get_doc_type, get_handlers)
+  feed.on 'change', x.on_change(logger, db, handlers, get_doc_type, get_handlers)
 
   feed.on 'error', (err) ->
     console.log(err)
-
+  logger.info('worker started')
   feed.follow()
   return feed
 
+sortErrorResults = (actionResults) ->
+  resolved = {}
+  rejected = {}
+  _.each(actionResults, (resourceResult, resourceName) ->
+    if resourceResult.state == 'resolved'
+      resolved[resourceName] = resourceResult.value or null
+    else
+      rejected[resourceName] = resourceResult.error or null
+  )
+  return [resolved, rejected]
 
 module.exports = x

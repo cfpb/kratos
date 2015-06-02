@@ -203,6 +203,8 @@ describe 'update_audit_entries', () ->
 
 describe 'on_change', () ->
   beforeEach () ->
+    this.logger = logger = jasmine.createSpyObj('logger', ['child', 'info', 'error'])
+    logger.child.andReturn(logger)
     this.get_doc_type = jasmine.createSpy('get_doc_type').andReturn('doc_type')
 
     this.gh_handler = jasmine.createSpy('gh_handler').andReturn(Promise.resolve({new_data: true}))
@@ -212,7 +214,7 @@ describe 'on_change', () ->
     spyOn(worker, 'get_unsynced_audit_entries').andReturn([{id: 'entry1'}, {id: 'entry2'}])
     spyOn(worker, 'update_audit_entries').andReturn(Promise.resolve())
     this.change = {doc: {_id: '123'}}
-    this.on_change = worker.on_change('db', 'handlers', this.get_doc_type, worker.get_handlers)
+    this.on_change = worker.on_change(this.logger, 'db', 'handlers', this.get_doc_type, worker.get_handlers)
 
     this.expected_results =
       entry1:
@@ -268,24 +270,28 @@ describe 'on_change', () ->
 describe 'start_worker', () ->
   beforeEach () ->
     this.db = {config: {url: 'url', db: 'db'}}
+    this.logger = {
+      info: () ->
+      error: () ->
+    }
     this.feedFollow = jasmine.createSpy('feedFollow')
     this.feedOn = jasmine.createSpy('feedOn')
     spyOn(follow, 'Feed').andReturn({follow: this.feedFollow, on: this.feedOn})
     spyOn(worker, 'on_change').andReturn('on_change')
 
   it 'creates a new feed with opts from the passed nano db', () ->
-    worker.start_worker(this.db, 'handlers', 'get_doc_type')
+    worker.start_worker(this.logger, this.db, 'handlers', 'get_doc_type')
     expect(follow.Feed).toHaveBeenCalledWith({db: 'url/db', include_docs: true})
 
   it 'attaches worker.on_change to the "change" event', () ->
-    worker.start_worker(this.db, 'handlers', 'get_doc_type', 'get_plugin_handlers')
-    expect(worker.on_change).toHaveBeenCalledWith(this.db, 'handlers', 'get_doc_type', 'get_plugin_handlers')
+    worker.start_worker(this.logger, this.db, 'handlers', 'get_doc_type', 'get_plugin_handlers')
+    expect(worker.on_change).toHaveBeenCalledWith(this.logger, this.db, 'handlers', 'get_doc_type', 'get_plugin_handlers')
     expect(this.feedOn).toHaveBeenCalledWith('change', 'on_change')
 
   it 'starts following the feed', () ->
-    worker.start_worker(this.db, 'handlers', 'get_doc_type')
+    worker.start_worker(this.logger, this.db, 'handlers', 'get_doc_type')
     expect(this.feedFollow).toHaveBeenCalled()
 
   it 'returns the feed', () ->
-    actual = worker.start_worker(this.db, 'handlers', 'get_doc_type')
+    actual = worker.start_worker(this.logger, this.db, 'handlers', 'get_doc_type')
     expect(actual.follow).toBeDefined()

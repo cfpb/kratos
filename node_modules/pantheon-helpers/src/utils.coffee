@@ -1,4 +1,3 @@
-Promise = require('promise')
 _ = require('underscore')
 
 u =
@@ -57,5 +56,20 @@ u.process_resp = (opts, callback) ->
       return callback(err, body)
     else
       return callback(err, resp, body)
+
+u.deepExtend = (target, source) ->
+  ###
+  recursively extend an object.
+  does not recurse into arrays
+  ###
+  for k, sv of source
+    tv = target[k]
+    if tv instanceof Array
+      target[k] = sv
+    else if typeof(tv) == 'object' and typeof(sv) == 'object'
+      target[k] = u.deepExtend(tv, sv)
+    else
+      target[k] = sv
+  return target
 
 module.exports = u

@@ -89,3 +89,4 @@ task 'test', 'run all tests', (options) ->
     cp = exec "jasmine-node --coffee ./spec"
   cp.stdout.pipe(process.stdout)
   cp.stderr.pipe(process.stderr)
+  cp.on('exit', (code) -> process.exit(code))

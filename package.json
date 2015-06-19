@@ -23,7 +23,9 @@
     "validoc": "git+https://github.com/dgreisen/validoc.git"
   },
   "devDependencies": {
-    "vows": "0.5.x"
+    "iced-coffee-script": "1.8.0-e",
+    "jasmine-node": "1.14.5",
+    "istanbul": "0.3.15"
   },
   "engine": "node >= 0.4.1"
 }

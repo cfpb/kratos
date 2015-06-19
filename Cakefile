@@ -3,7 +3,7 @@
 {exec} = require 'child_process'
 path = require('path')
 fs = require('fs')
-Promise = require('promise')
+Promise = require('pantheon-helpers').promise
 
 DIR = __dirname
 
@@ -83,10 +83,13 @@ task 'import_teams_from_gh', 'Import teams from Github - not idempotent!!', (opt
 option '-v', '--verbose', 'verbose testing output'
 
 task 'test', 'run all tests', (options) ->
-  if options.verbose
-    cp = exec "jasmine-node --coffee --verbose ./spec"
-  else
-    cp = exec "jasmine-node --coffee ./spec"
-  cp.stdout.pipe(process.stdout)
-  cp.stderr.pipe(process.stderr)
-  cp.on('exit', (code) -> process.exit(code))
+  Promise.exec("./node_modules/iced-coffee-script/bin/coffee --bare --compile --output ./spec/ ./spec/").then(() ->
+    cmd = "./node_modules/istanbul/lib/cli.js cover ./node_modules/jasmine-node/bin/jasmine-node ./spec"
+    cmd += if options.verbose then "--verbose " else ""
+    cmd += " ./spec/"
+
+    cp = exec(cmd)
+    cp.stdout.pipe(process.stdout)
+    cp.stderr.pipe(process.stderr)
+    cp.on('exit', (code) -> process.exit(code))
+  )

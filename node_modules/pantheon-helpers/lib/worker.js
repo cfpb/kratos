@@ -66,10 +66,20 @@
     return filtered_handlers;
   };
 
-  x.get_unsynced_audit_entries = function(doc) {
+  x.get_audit_entries_to_sync = function(doc) {
+    var now;
+    now = +new Date();
     return _.filter(doc.audit, function(entry) {
-      return !entry.synced;
+      var _ref;
+      return !entry.synced && ((!((_ref = entry.attempts) != null ? _ref.length : void 0)) || entry.attempts[0] < now);
     });
+  };
+
+  x.get_next_attempt_time = function(now, attempts) {
+    var nextInMilliseconds, nextInMinutes;
+    nextInMinutes = Math.pow(2, attempts.length);
+    nextInMilliseconds = nextInMinutes * 60 * 1000;
+    return now + nextInMilliseconds;
   };
 
   x.update_document_with_worker_result = function(doc) {
@@ -94,6 +104,12 @@
         return result.state === 'resolved';
       });
       entry.synced = entry.synced || synced;
+      if (entry.synced) {
+        delete entry.attempts;
+      } else {
+        entry.attempts = entry.attempts || [];
+        entry.attempts.unshift(x.get_next_attempt_time(+(new Date), entry.attempts));
+      }
       return _.each(entry_results, x.update_document_with_worker_result(doc));
     };
   };
@@ -125,7 +141,7 @@
       var doc, docLog, doc_type, entry_promises, unsynced_audit_entries;
       doc = change.doc;
       doc_type = get_doc_type(doc);
-      unsynced_audit_entries = x.get_unsynced_audit_entries(doc);
+      unsynced_audit_entries = x.get_audit_entries_to_sync(doc);
       docLog = logger.child({
         docId: doc._id,
         rev: doc._rev
@@ -200,18 +216,40 @@
         return docLog.error({
           error: err
         }, 'finish handling actions');
+      }).then(function() {
+        return Promise.resolve();
       });
     };
   };
 
+  x.setInterval = setInterval;
+
+  x.processFailures = function(db, onChange) {
+    return function() {
+      return db.view('pantheon', 'failures_by_retry_date', {
+        endkey: +new Date(),
+        include_docs: true
+      }, 'promise').then(function(resp) {
+        return Promise.all(resp.rows.map(onChange));
+      });
+    };
+  };
+
+  x.watchForFailures = function(db, onChange, period) {
+    var interval;
+    interval = x.setInterval(x.processFailures(db, onChange), period);
+    return interval;
+  };
+
   x.start_worker = function(logger, db, handlers, get_doc_type, get_handlers) {
-    var feed, opts;
+    var MINUTES, feed, interval, onChange, opts;
     if (get_handlers == null) {
       get_handlers = x.get_handlers;
     }
 
     /*
     start a worker that watches a db for changes and calls the appropriate handlers.
+    it also looks in the database every two minutes for failed syncs that are ready for a retry.
     db: the nano database to watch
     handlers: a hash of handlers. Each handler should handle a different action.
     get_doc_type: a function that returns the document type. this can be used to look up the appropriate handler.
@@ -229,13 +267,19 @@
         return true;
       }
     };
-    feed.on('change', x.on_change(logger, db, handlers, get_doc_type, get_handlers));
+    onChange = x.on_change(logger, db, handlers, get_doc_type, get_handlers);
+    feed.on('change', onChange);
     feed.on('error', function(err) {
       return console.log(err);
     });
     logger.info('worker started');
     feed.follow();
-    return feed;
+    MINUTES = 60 * 1000;
+    interval = x.watchForFailures(db, onChange, 2 * MINUTES);
+    return {
+      feed: feed,
+      interval: interval
+    };
   };
 
   sortErrorResults = function(actionResults) {

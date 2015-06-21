@@ -1,0 +1,14 @@
+{
+  "name": "pantheon",
+  "version": "0.0.1",
+  "description": "pantheon-helper design doc methods",
+  "modules": [
+    "lib"
+  ],
+  "load": "lib/app",
+  "dependencies": {
+    "modules": null,
+    "properties": null,
+    "underscore": null
+  }
+}

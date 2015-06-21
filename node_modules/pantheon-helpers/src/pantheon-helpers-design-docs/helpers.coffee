@@ -1,7 +1,4 @@
-try
-  _ = require('lib/underscore')
-catch err
-  _ = require('underscore')
+_ = require('underscore')
 
 h = {}
 

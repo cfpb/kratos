@@ -1,4 +1,4 @@
-Promise = require('pantheon-helpers').promise
+Promise = require('../lib').promise
 
 _handleError = (done) ->
   (err) ->

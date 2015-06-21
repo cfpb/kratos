@@ -51,6 +51,10 @@ bootstrap = function() {
   }).then(function () {
     console.log('\nBuilding coffeescript...');
     return exec("cake build", {cwd: PROJ_DIR});
+  }).then(function() {
+    console.log('\nSymlinking...');
+    fs.symlinkSync('../../node_modules/pantheon-helpers/lib/design_docs/pantheon', path.join(PROJ_DIR, 'lib', 'design_docs', 'pantheon'))
+    return Promise.resolve()
   });
 };
 

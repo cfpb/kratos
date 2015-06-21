@@ -1,4 +1,4 @@
-utils = require('pantheon-helpers').utils
+utils = require('../lib').utils
 
 describe 'mk_objs', () ->
   it 'traverses existing objects to return object at path', () ->

@@ -64,6 +64,7 @@ task 'test', 'run all tests (options: -v)', (options) ->
     cp = exec "jasmine-node --coffee ./spec"
   cp.stdout.pipe(process.stdout)
   cp.stderr.pipe(process.stderr)
+  cp.on('exit', (code) -> process.exit(code))
 
 task 'start_design_doc', 'create a new kanso design doc directory', (options) ->
   prompt_get = Promise.denodeify(prompt.get).bind(prompt);

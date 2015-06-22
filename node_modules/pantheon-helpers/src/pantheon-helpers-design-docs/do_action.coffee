@@ -1,8 +1,4 @@
-try
-  _ = require('underscore')
-  testing = true
-catch err
-  _ = require('lib/underscore')
+_ = require('underscore')
 
 module.exports = (action_handlers, get_doc_type, prep_doc) ->
   (doc, req) ->

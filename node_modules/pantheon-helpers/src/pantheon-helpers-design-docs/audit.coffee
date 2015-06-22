@@ -1,7 +1,4 @@
-try
-  _ = require('underscore')
-catch err
-  _ = require('lib/underscore')
+_ = require('underscore')
 
 a =
   views:

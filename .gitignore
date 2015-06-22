@@ -4,7 +4,12 @@
 *secret*
 !*secret*example
 /template_repo
-/node_modules/.bin
+
+# dev dependencies #
+#####################
+/node_modules/iced-coffee-script
+/node_modules/jasmine-node
+/node_modules/istanbul
 
 # Compiled source #
 ###################
@@ -15,6 +20,11 @@
 *.o
 *.so
 _site/
+
+# Testing #
+###########
+/coverage
+/spec/**/*.js
 
 # Packages #
 ############

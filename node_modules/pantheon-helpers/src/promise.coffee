@@ -5,6 +5,7 @@ resolve = require('url').resolve
 parse_links = require('parse-links')
 utils = require('./utils')
 timers = require('timers')
+{exec} = require 'child_process'
 
 Promise.resolveAll = (promiseArray) ->
   """
@@ -109,5 +110,7 @@ Promise.RestClient = (defaults) ->
 Promise.setTimeout = Promise.denodeify((delay, args..., callback) ->
   timers.setTimeout.apply(null, [callback, delay].concat(args))
 )
+
+Promise.exec = Promise.denodeify(exec)
 
 module.exports = Promise

@@ -1,0 +1,3 @@
+instrumentation:
+  excludes: ['**/spec/**', '**/packages/**']
+  include-all-sources: true

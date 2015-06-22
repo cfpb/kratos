@@ -38,7 +38,7 @@
         return (function(__iced_k) {
           __iced_deferrals = new iced.Deferrals(__iced_k, {
             parent: ___iced_passed_deferral,
-            filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+            filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
             funcname: "create_db"
           });
           nano_system_user.db.create(db_name, __iced_deferrals.defer({
@@ -61,7 +61,7 @@
           (function(__iced_k) {
             __iced_deferrals = new iced.Deferrals(__iced_k, {
               parent: ___iced_passed_deferral,
-              filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+              filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
               funcname: "create_db"
             });
             x.sync_design_docs(db_name, design_docs, security_doc, __iced_deferrals.defer({
@@ -102,7 +102,7 @@
         return (function(__iced_k) {
           __iced_deferrals = new iced.Deferrals(__iced_k, {
             parent: ___iced_passed_deferral,
-            filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+            filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
             funcname: "ensure_db"
           });
           db[method].apply(db, args.concat([
@@ -125,7 +125,7 @@
             (function(__iced_k) {
               __iced_deferrals = new iced.Deferrals(__iced_k, {
                 parent: ___iced_passed_deferral,
-                filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+                filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
                 funcname: "ensure_db"
               });
               x.create_db(db_name, __iced_deferrals.defer({
@@ -163,7 +163,7 @@
         return (function(__iced_k) {
           __iced_deferrals = new iced.Deferrals(__iced_k, {
             parent: ___iced_passed_deferral,
-            filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+            filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
             funcname: "force_get"
           });
           x.ensure_db(db, 'get', doc_id, __iced_deferrals.defer({
@@ -198,7 +198,7 @@
         return (function(__iced_k) {
           __iced_deferrals = new iced.Deferrals(__iced_k, {
             parent: ___iced_passed_deferral,
-            filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+            filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
             funcname: "update"
           });
           x.force_get(db, doc_id, __iced_deferrals.defer({
@@ -221,7 +221,7 @@
           (function(__iced_k) {
             __iced_deferrals = new iced.Deferrals(__iced_k, {
               parent: ___iced_passed_deferral,
-              filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+              filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
               funcname: "update"
             });
             db.insert(doc, doc_id, __iced_deferrals.defer({
@@ -253,7 +253,7 @@
         return (function(__iced_k) {
           __iced_deferrals = new iced.Deferrals(__iced_k, {
             parent: ___iced_passed_deferral,
-            filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+            filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
             funcname: "sync_all_db_design_docs"
           });
           nano_system_user.db.list(__iced_deferrals.defer({
@@ -277,7 +277,7 @@
             var _i, _len;
             __iced_deferrals = new iced.Deferrals(__iced_k, {
               parent: ___iced_passed_deferral,
-              filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+              filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
               funcname: "sync_all_db_design_docs"
             });
             for (i = _i = 0, _len = dbs.length; _i < _len; i = ++_i) {
@@ -321,7 +321,7 @@
             (function(__iced_k) {
               __iced_deferrals = new iced.Deferrals(__iced_k, {
                 parent: ___iced_passed_deferral,
-                filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+                filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
                 funcname: "sync_security_doc"
               });
               fs.readFile(security_doc_path, {
@@ -369,7 +369,7 @@
         return (function(__iced_k) {
           __iced_deferrals = new iced.Deferrals(__iced_k, {
             parent: ___iced_passed_deferral,
-            filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+            filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
             funcname: "sync_design_docs"
           });
           x.sync_security_doc(db_name, security_doc, __iced_deferrals.defer({
@@ -392,7 +392,7 @@
             var _i, _len;
             __iced_deferrals = new iced.Deferrals(__iced_k, {
               parent: ___iced_passed_deferral,
-              filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+              filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
               funcname: "sync_design_docs"
             });
             for (i = _i = 0, _len = design_doc_names.length; _i < _len; i = ++_i) {
@@ -449,7 +449,7 @@
         return (function(__iced_k) {
           __iced_deferrals = new iced.Deferrals(__iced_k, {
             parent: ___iced_passed_deferral,
-            filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+            filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
             funcname: "upsert"
           });
           x.ensure_db(db, 'fetch', {
@@ -474,7 +474,7 @@
           (function(__iced_k) {
             __iced_deferrals = new iced.Deferrals(__iced_k, {
               parent: ___iced_passed_deferral,
-              filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+              filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
               funcname: "upsert"
             });
             db.bulk({
@@ -528,7 +528,7 @@
         return (function(__iced_k) {
           __iced_deferrals = new iced.Deferrals(__iced_k, {
             parent: ___iced_passed_deferral,
-            filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+            filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
             funcname: "get_uuid"
           });
           nano_system_user.request({
@@ -561,7 +561,7 @@
         return (function(__iced_k) {
           __iced_deferrals = new iced.Deferrals(__iced_k, {
             parent: ___iced_passed_deferral,
-            filename: "/Users/greisend/programming/devdash/sisyphus/node_modules/pantheon-helpers/src/couch_utils.iced",
+            filename: "/Users/greisend/programming/devdash/pantheon-repos/pantheon-helpers/src/couch_utils.iced",
             funcname: "get_uuids"
           });
           nano_system_user.request({

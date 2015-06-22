@@ -1,8 +1,4 @@
-try
-  _ = require('underscore')
-catch err
-  _ = require('lib/underscore')
-
+_ = require('underscore')
 
 v =
   validate_doc_update: (validation_fns, get_doc_type, should_skip_validation_for_user) ->

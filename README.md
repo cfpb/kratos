@@ -3,7 +3,7 @@
 
 [![Build Status](https://travis-ci.org/cfpb/kratos.svg)](https://travis-ci.org/cfpb/kratos)
 
-[![Coverage Status](https://coveralls.io/repos/cfpb/kratos/badge.svg)](https://coveralls.io/r/cfpb/kratos)
+[![Coverage Status](https://coveralls.io/repos/cfpb/kratos/badge.svg?branch=master)](https://coveralls.io/r/cfpb/kratos?branch=master)
 
 A pluggable microservice to enforce authorization across the entire enterprise.
 One of the Pantheon of CFPB microservices.

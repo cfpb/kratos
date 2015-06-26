@@ -10,6 +10,7 @@
 /node_modules/iced-coffee-script
 /node_modules/jasmine-node
 /node_modules/istanbul
+/node_modules/coveralls
 
 # Compiled source #
 ###################

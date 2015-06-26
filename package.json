@@ -25,7 +25,8 @@
   "devDependencies": {
     "iced-coffee-script": "1.8.0-e",
     "jasmine-node": "1.14.5",
-    "istanbul": "0.3.15"
+    "istanbul": "0.3.15",
+    "coveralls": "2.11.2"
   },
   "engine": "node >= 0.4.1"
 }

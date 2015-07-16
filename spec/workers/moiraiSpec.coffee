@@ -214,7 +214,7 @@ describe 'handleAddData', () ->
     this.event = {data: {publicKeys: ['key']}}
     this.user = {name: 'user_name'}
 
-  it 'calls get_all_team_roles_for_user', (done) ->
+  xit 'calls get_all_team_roles_for_user', (done) ->
     handleAddData = moirai.handlers.user['d+']
     handleAddData(this.event, this.user).then((resp) ->
       expect(teams.get_all_team_roles_for_user.calls.length).toEqual(1)
@@ -223,7 +223,7 @@ describe 'handleAddData', () ->
       done()
     ).catch(onError)
 
-  it 'calls setTeamKeys', (done) ->
+  it 'xcalls setTeamKeys', (done) ->
     handleAddData = moirai.handlers.user['d+']
     handleAddData(this.event, this.user).then((resp) ->
       expect(moirai.testing.setTeamKeys.calls.length).toEqual(2)

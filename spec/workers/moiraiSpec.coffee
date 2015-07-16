@@ -223,7 +223,7 @@ describe 'handleAddData', () ->
       done()
     ).catch(onError)
 
-  it 'xcalls setTeamKeys', (done) ->
+  xit 'calls setTeamKeys', (done) ->
     handleAddData = moirai.handlers.user['d+']
     handleAddData(this.event, this.user).then((resp) ->
       expect(moirai.testing.setTeamKeys.calls.length).toEqual(2)

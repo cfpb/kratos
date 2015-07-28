@@ -1,6 +1,5 @@
 _ = require('underscore')
 users = require('../api/users')
-teams = require('../api/teams')
 auth = require('../validation').auth
 Promise = require('pantheon-helpers/lib/promise')
 conf = require('../config')
@@ -69,6 +68,7 @@ handleAddCluster = (event, team) ->
 handleAddData = (event, user) ->
   # look at the event, see if one of the keys in the event is publicKeys
   if event.data.publicKeys?
+    teams = require('../api/teams')
     return teams.get_all_team_roles_for_user(user.name).then((teamList) ->
       teamPromises = teamList.map((teamHash) ->
         team = teamHash.team

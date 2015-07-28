@@ -3,7 +3,6 @@ users = require('../api/users')
 auth = require('../validation').auth
 git = require('./gh_client')
 Promise = require('pantheon-helpers').promise
-teams_api = require('../api/teams')
 
 gh = {}
 
@@ -107,6 +106,7 @@ handle_create_team = (event, team) ->
   )
 
 get_gh_team_ids = (user) ->
+  teams_api = require('../api/teams')
   teams_api.get_all_team_roles_for_user(user.name).then((team_roles) ->
     gh_team_ids = team_roles.map((team_role) ->
       return get_gh_team_id(team_role.team, user, team_role.role)

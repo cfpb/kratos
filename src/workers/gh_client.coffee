@@ -95,7 +95,7 @@ c =
       ###
       gh_repo_opts = _.defaults(gh_repo_opts, {
         description: "",
-        homepage: "https://github.com/" + gh_conf.ORG_NAME,
+        homepage: "",
         private: false,
         has_issues: true,
         has_wiki: true,

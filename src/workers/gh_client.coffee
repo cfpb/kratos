@@ -125,7 +125,7 @@ c =
         else
           return Promise.reject(err)
       ).then(() ->
-        exec('git pull "' + gh_conf.TEMPLATE_REPO + '"', {cwd: TEMPLATE_DIR})
+        exec('git pull --depth=1 "' + gh_conf.TEMPLATE_REPO + '"', {cwd: TEMPLATE_DIR})
       ).then(() ->
         push_repo_url = get_authenticated_repo_url(repo_data.clone_url)
         exec('git push "' + push_repo_url + '" master', {cwd: TEMPLATE_DIR})

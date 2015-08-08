@@ -1,4 +1,7 @@
-validation =
+{getPlugins} = require('../utils')
+plugins = getPlugins()
+
+validation = {
   _is_team: (doc) ->
     return doc._id.indexOf('team_') == 0
   _is_user: (doc) ->
@@ -44,6 +47,10 @@ validation =
   proxy_asset_action: (actor, team, resource, asset, path, method, body, req) ->
     validation._validate('proxy_asset_action', arguments, arguments)
 
+  proxy_resource: (actor, team, resource, proxyAction, asset) ->
+    # asset is optional for proxy actions that are not performed on an asset
+    validation._validate('proxy_resource', [actor, team, resource, proxyAction], [actor, team, resource, proxyAction, asset])
+
 
   add_user: (actor, user) ->
     validation._validate('add_user', [actor], [user])
@@ -60,7 +67,36 @@ validation =
   add_user_data: (actor, old_user, new_user) ->
     validation._validate('add_user_data', [actor, old_user], [actor, old_user, new_user])
 
-require('./auth/index')(validation)
-require('./val/index')(validation)
+  actions:
+    team:
+      't+': (event, actor, old_team, new_team) ->
+        validation.add_team(actor, new_team)
+      'a+': (event, actor, old_team, new_team) ->
+        validation.add_team_asset(actor, old_team, event.resource, event.asset)
+      'a-': (event, actor, old_team, new_team) ->
+        validation.remove_team_asset(actor, old_team, event.resource, event.asset)
+      'u+': (event, actor, old_team, new_team) ->
+        validation.add_team_member(actor, old_team, null, event.role)
+      'u-': (event, actor, old_team, new_team) ->
+        validation.remove_team_member(actor, old_team, null, event.role)
+    user:
+      'r+': (event, actor, old_user, new_user) ->
+        validation.add_resource_role(actor, new_user, event.resource, event.role)
+      'r-': (event, actor, old_user, new_user) ->
+        validation.remove_resource_role(actor, new_user, event.resource, event.role)
+      'u+': (event, actor, old_user, new_user) ->
+        validation.add_user(actor, old_user or new_user)
+      'u-': (event, actor, old_user, new_user) ->
+        validation.remove_user(actor, old_user)
+      'd+': (event, actor, old_user, new_user) ->
+        validation.add_user_data(actor, old_user, new_user)
+
+}
+
+validation.auth = require('./authorization')(validation, plugins)
+validation.validation = require('./validation')(validation, plugins)
+
 require('./schema/index')(validation)
+
+
 module.exports = validation

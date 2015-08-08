@@ -16,7 +16,7 @@
 # Testing #
 ###########
 /coverage
-/spec/**/*.js
+/_specjs
 
 
 # Logs and databases #

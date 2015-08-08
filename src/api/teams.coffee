@@ -1,229 +1,231 @@
-couch_utils = require('../couch_utils')
+couchUtils = require('../couch_utils')
 utils = require('../utils')
-request = require('request')
-uuid = require('node-uuid')
 _ = require('underscore')
 Promise = require('pantheon-helpers').promise
-doAction = require('pantheon-helpers').doAction
 validation = require('../validation')
 conf = require('../config')
+{prepDoc} = require('../shared')
+t = {}
+t.doAction = require('../doAction')
 
-resources = {
-  gh: require('../workers/gh'),
-  moirai: require('../workers/moirai'),
-}
+getWorker = (resource) ->
+  api = require('./index')
+  workers = {}
 
-process_req = (req) ->
+  utils.getPlugins().forEach((plugin) ->
+    workers[plugin.name] = plugin.worker
+  )
+
+  worker = workers[resource]?(api, validation, couchUtils)
+  return worker or {}
+
+getActorNameFromDB = (db) ->
+  return db.config.url.split(':')[1].slice(2)
+
+processReq = (req) ->
   params = req.params
-  org_db_name = 'org_' + params.org_id
-  team_name = params.team_id
-  db = req.couch.use(org_db_name)
-  return [db, team_name, params]
+  orgDbName = 'org_' + params.orgId
+  teamName = params.teamId
+  if teamName && teamName.indexOf('team_') == 0
+    teamName = teamName.slice(5)
+  db = req.couch.use(orgDbName)
+  actorName = req.session.user
+  return [orgDbName, db, actorName, teamName, params]
 
 teams = {}
 
-teams.create_team = (db, team_name, callback) ->
-  doAction(db, 'base', null, {
+# t.doAction(dbName, actor, docId, actionHash)
+
+teams.createTeam = (dbName, actorName, teamName) ->
+  t.doAction(dbName, actorName, null, {
     a: 't+',
-    name: team_name,
-  }, callback)
+    name: teamName,
+  })
 
-teams.handle_create_team = (req, resp) ->
-  [db, team_name, params] = process_req(req)
-  teams.create_team(db, team_name).on('response', (couch_resp) ->
+teams.handleCreateTeam = (req, resp) ->
+  [orgDbName, db, actorName, teamName, params] = processReq(req)
+  promise = teams.createTeam(orgDbName, actorName, teamName).catch((err) ->
     # 409 conflict -> already created, so return the existing team
-    if couch_resp.statusCode == 409
-      teams.get_team(db, team_name).pipe(resp)
+    if err.statusCode == 409
+      return teams.getTeam(db, teamName)
     else
-      resp.status(couch_resp.statusCode)
-      couch_resp.pipe(resp)
+      Promise.reject(err)
+  )
+  Promise.sendHttp(promise, resp)
+
+teams.getTeam = (orgDb, teamName) ->
+  # returns promise
+  teamId = utils.formatId(teamName, 'team')
+  actorName = getActorNameFromDB(orgDb)
+  actorPromise = utils.getActor(couchUtils, actorName)
+  teamPromise = orgDb.get(teamId, 'promise')
+  Promise.all([teamPromise, actorPromise]).then(([team, actor]) ->
+    preppedDoc = prepDoc(team, actor)
+    Promise.resolve(preppedDoc)
   )
 
-teams.get_team = (org_db, team_name, callback) ->
-  return couch_utils.rewrite(org_db, 'base', '/teams/team_' + team_name, callback)
+teams.handleGetTeam = (req, resp) ->
+  [orgDbName, db, actorName, teamName, params] = processReq(req)
+  promise = teams.getTeam(db, teamName)
+  Promise.sendHttp(promise, resp)
 
-teams.handle_get_team = (req, resp) ->
-  [db, team_name, params] = process_req(req)
-  teams.get_team(db, team_name).pipe(resp)
-
-teams.get_teams = (org_db, callback) ->
-  return couch_utils.rewrite(org_db, 'base', '/teams', callback)
-
-teams.handle_get_teams = (req, resp) ->
-  [db] = process_req(req)
-  teams.get_teams(db).pipe(resp)
-
-teams.get_all_teams = () ->
-  # returns a promise only
-  utils.get_org_dbs().then((org_ids) ->
-    all_teams = org_ids.map((org_id) ->
-      org_db = couch_utils.nano_system_user.use(org_id)
-      teams.get_teams(org_db, 'promise')
+teams.getTeams = (orgDb) ->
+  actorName = getActorNameFromDB(orgDb)
+  actorPromise = utils.getActor(couchUtils, actorName)
+  teamsPromise = couchUtils.rewrite(orgDb, 'base', '/teams', 'promise')
+  Promise.all([teamsPromise, actorPromise]).then(([teams, actor]) -> 
+    preppedDocs = teams.map((team) -> 
+      return prepDoc(team, actor)
     )
-    Promise.all(all_teams)
-  ).then((all_teams) ->
-    all_teams = _.flatten(all_teams, true)
-    Promise.resolve(all_teams)
+    Promise.resolve(preppedDocs)
   )
 
-teams.get_team_roles_for_user = (db, user_name, callback) ->
+
+teams.handleGetTeams = (req, resp) ->
+  [orgDbName, db, actorName, teamName, params] = processReq(req)
+  promise = teams.getTeams(db)
+  Promise.sendHttp(promise, resp)
+
+teams.getAllTeams = () ->
+  # returns a promise only
+  utils.getOrgDbs().then((orgIds) ->
+    allTeams = orgIds.map((orgId) ->
+      orgDb = couchUtils.nano_system_user.use(orgId)
+      teams.getTeams(orgDb)
+    )
+    Promise.all(allTeams)
+  ).then((allTeams) ->
+    allTeams = _.flatten(allTeams, true)
+    Promise.resolve(allTeams)
+  )
+
+teams.getTeamRolesForUser = (db, userName, callback) ->
   ###
   return an array of team/role hashes to which the user belongs:
     [{team: <obj>, role: <str>}]
   ###
-  db.viewWithList('base', 'by_role', 'get_team_roles', {include_docs: true, startkey: [user_name], endkey: [user_name, {}]}, callback)
+  db.viewWithList('base', 'by_role', 'get_team_roles', {include_docs: true, startkey: [userName], endkey: [userName, {}]}, callback)
 
-teams.get_all_team_roles_for_user = (user_name) ->
+teams.getAllTeamRolesForUser = (userName) ->
   # returns a promise only
-  utils.get_org_dbs('promise').then((org_ids) ->
-    team_roles = org_ids.map((org_id) ->
-      db = couch_utils.nano_system_user.use(org_id)
-      teams.get_team_roles_for_user(db, user_name, 'promise')
+  utils.getOrgDbs('promise').then((orgIds) ->
+    teamRoles = orgIds.map((orgId) ->
+      db = couchUtils.nano_system_user.use(orgId)
+      teams.getTeamRolesForUser(db, userName, 'promise')
     )
-    Promise.all(team_roles)
-  ).then((team_roles) ->
-    team_roles = _.flatten(team_roles, true)
-    Promise.resolve(team_roles)
+    Promise.all(teamRoles)
+  ).then((teamRoles) ->
+    teamRoles = _.flatten(teamRoles, true)
+    Promise.resolve(teamRoles)
   )
 
-teams.add_member = (db, team_name, role, user_id, callback) ->
-  team_id = 'team_' + team_name
-  doAction(db, 'base', team_id, {
+teams.addMember = (dbName, actorName, teamName, role, userId) ->
+  teamId = 'team_' + teamName
+  t.doAction(dbName, actorName, teamId, {
     a: 'u+',
     role: role,
-    user: user_id,
-  }, callback)
+    user: userId,
+  })
 
-teams.remove_member = (db, team_name, role, user_id, callback) ->
-  team_id = 'team_' + team_name
-  doAction(db, 'base', team_id, {
+teams.removeMember = (dbName, actorName, teamName, role, userId) ->
+  teamId = 'team_' + teamName
+  t.doAction(dbName, actorName, teamId, {
     a: 'u-',
     role: role,
-    user: user_id,
-  }, callback)
+    user: userId,
+  })
 
-teams.add_asset = (db, actor_name, team_name, resource, asset_data) ->
+teams.addAsset = (dbName, actorName, teamName, resource, assetData) ->
   # only returns a promise; no streaming/callback support
-  users = require('./users')
+  db = couchUtils.nano_user(actorName).use(dbName)
 
   Promise.all([
-    teams.get_team(db, team_name, 'promise'),
-    users.get_user(actor_name, 'promise'),
+    teams.getTeam(db, teamName, 'promise'),
+    utils.getActor(couchUtils, actorName),
   ]).then(([team, actor]) ->
     isAuthorized = validation.auth.add_team_asset(actor, team, resource)
     if not isAuthorized
-      return Promise.reject({code: 401, error: 'unauthorized', msg: 'You are not authorized to add this asset'})
+      return Promise.reject({statusCode: 401, error: 'unauthorized', msg: 'You are not authorized to add this asset'})
 
-    handler = resources[resource]?.getOrCreateAsset
+    handler = getWorker(resource).getOrCreateAsset
     if not handler
-      return Promise.reject({code: 404, error: "not_found", msg: 'Resource, ' + resource + ', not found.'})
+      return Promise.reject({statusCode: 404, error: "not_found", msg: 'Resource, ' + resource + ', not found.'})
 
-    handler(asset_data, team, actor).then((new_asset) ->
-      if not new_asset?  # no change
+    handler(assetData, team, actor).then((newAsset) ->
+      if not newAsset?  # no change
         return Promise.resolve(team)
       else
-        return doAction(db, 'base', team._id, {
+        return t.doAction(dbName, actorName, team._id, {
           a: 'a+',
           resource: resource,
-          asset: new_asset,
-        }, 'promise')
+          asset: newAsset,
+        })
     )
   ).catch((err) ->
-    console.error('add_asset_error', resource, asset_data, err)
+    # TODO Add better logging here
+    console.error('add_asset_error', resource, assetData, err)
     Promise.reject(err)
   )
 
-teams.remove_asset = (db, team_name, resource, asset_id, callback) ->
-  team_id = 'team_' + team_name
-  doAction(db, 'base', team_id, {
+teams.removeAsset = (dbName, actorName, teamName, resource, assetId) ->
+  teamId = 'team_' + teamName
+  t.doAction(dbName, actorName, teamId, {
     a: 'a-',
     resource: resource,
-    asset: {id: asset_id},
-  }, callback)
+    asset: {id: assetId},
+  })
 
-teams.handle_add_member = (req, resp) ->
-  [db, team_name, params] = process_req(req)
-  teams.add_member(db, team_name, params.role, params.user_id).pipe(resp)
+teams.handleAddMember = (req, resp) ->
+  [orgDbName, db, actorName, teamName, params] = processReq(req)
+  promise = teams.addMember(orgDbName, actorName, teamName, params.role, params.userId)
+  Promise.sendHttp(promise, resp)
 
-teams.handle_remove_member = (req, resp) ->
-  [db, team_name, params] = process_req(req)
-  teams.remove_member(db, team_name, params.role, params.user_id).pipe(resp)
+teams.handleRemoveMember = (req, resp) ->
+  [orgDbName, db, actorName, teamName, params] = processReq(req)
+  promise = teams.removeMember(orgDbName, actorName, teamName, params.role, params.userId)
+  Promise.sendHttp(promise, resp)
 
-teams.handle_add_asset = (req, resp) ->
-  [db, team_name, params] = process_req(req)
-  teams.add_asset(db, req.session.user, team_name, params.resource, req.body).then((team) ->
-    resp.send(JSON.stringify(team))
-  ).catch((err) ->
-    if err.code
-      resp.status(err.code).send(JSON.stringify(_.pick(err, 'error', 'msg')))
-    else
-      resp.status(500).send(JSON.stringify({error: 'server error', msg: 'something went wrong. please try again.'}))
-  )
+teams.handleAddAsset = (req, resp) ->
+  [orgDbName, db, actorName, teamName, params] = processReq(req)
+  promise = teams.addAsset(orgDbName, actorName, teamName, params.resource, req.body)
+  Promise.sendHttp(promise, resp)
 
-teams.handle_remove_asset = (req, resp) ->
-  [db, team_name, params] = process_req(req)
-  teams.remove_asset(db, team_name, params.resource, params.asset_id).pipe(resp)
+teams.handleRemoveAsset = (req, resp) ->
+  [orgDbName, db, actorName, teamName, params] = processReq(req)
+  promise = teams.removeAsset(orgDbName, actorName, teamName, params.resource, params.assetId)
+  Promise.sendHttp(promise, resp)
 
-teams.get_team_details = (db, team_name, actor_name) ->
-  users = require('./users')
+teams.getTeamDetails = (db, teamName, actorName) ->
   Promise.all([
-    teams.get_team(db, team_name, 'promise'),
-    users.get_user(actor_name, 'promise'),
+    teams.getTeam(db, teamName, 'promise'),
+    utils.getActor(couchUtils, actorName),
   ]).then(([team, actor]) ->
 
-    rsrcs_promises = {}
-    _.forEach(team.rsrcs, (resource_data, resource_name) -> 
-      detailHandler = resources[resource_name].getTeamAssetDetails
+    rsrcsPromises = {}
+    _.forEach(team.rsrcs, (resourceData, resourceName) -> 
+      detailHandler = getWorker(resourceName).getTeamAssetDetails
       if detailHandler
-        assets = resource_data.assets
-        rsrcs_promises[resource_name] = detailHandler(assets, team, actor).then((asset_details) ->
-          zipped_assets = _.zip(assets, asset_details)
-          _.each(zipped_assets, ([asset_data, asset_details]) ->
-            asset_data.details = asset_details
+        assets = resourceData.assets
+        rsrcsPromises[resourceName] = detailHandler(assets, team, actor).then((assetDetails) ->
+          zippedAssets = _.zip(assets, assetDetails)
+          _.each(zippedAssets, ([assetData, assetDetails]) ->
+            assetData.details = assetDetails
           )
           return Promise.resolve(assets)
         )
       else
-        rsrcs_promises[resource_name] = Promise.resolve([])
+        rsrcsPromises[resourceName] = Promise.resolve([])
     )
 
-    Promise.hashAll(rsrcs_promises).then((rsrcs) ->
+    Promise.hashAll(rsrcsPromises).then((rsrcs) ->
       Promise.resolve({rsrcs: rsrcs})
     )
   )
 
-teams.handle_get_team_details = (req, resp) ->
-  [db, team_name, params] = process_req(req)
-  teams.get_team_details(db, team_name, req.session.user).then(
-    (team_details) ->
-      resp.send(JSON.stringify(team_details))
-    (err) ->
-      console.log('handle_get_team_details error', team_name, err)
-      if err.statusCode
-        return resp.status(err.statusCode).send(JSON.stringify(_.pick(err, 'error', 'reason')))
-      else
-        return resp.status(500).send(JSON.stringify({error: 'server error', msg: 'something went wrong. please try again.'}))
-  )
+teams.handleGetTeamDetails = (req, resp) ->
+  [orgDbName, db, actorName, teamName, params] = processReq(req)
+  promise = teams.getTeamDetails(db, teamName, req.session.user)
+  Promise.sendHttp(promise, resp)
 
-teams.handle_proxy_action = (req, resp) ->
-  [db, team_name, params] = process_req(req)  users = require('./users')
-
-  Promise.all([
-    teams.get_team(db, team_name, 'promise'),
-    users.get_user(req.session.user, 'promise'),
-  ]).then(([team, actor]) ->
-    resource = params.resource
-    assets = team.rsrcs?[resource]?.assets
-    asset = _.findWhere(assets, {id: params.asset_id})
-    if not asset
-      resp.status(404).send({error: "not_found", msg: 'Asset, ' + resource + ' ' + params.asset_id + ', not found.'})
-    try
-      validation.proxy_asset_action(actor, team, resource, asset, params.path, req.method, req.body, req)
-    catch e
-      status = {unauthorized: 401,  invalid: 403 }[e.state]
-      return resp.status(status).send(JSON.stringify({err: e.state, msg: e.err}))
-    return resources[resource].doAssetAction(actor, team, resource, asset, params.path, req.method, req.body, req, resp)
-  )
-
-
+teams.testing = t
 module.exports = teams

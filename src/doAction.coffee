@@ -41,12 +41,10 @@ getDocType = shared.getDocType
 
 prepDoc = shared.prepDoc
 
-module.exports = {
-  doAction: doAction(null,
+module.exports = doAction(null,
                      couchUtils,
                      actionHandlers,
                      validationFns,
                      getDocType,
                      prepDoc,
                     )
-}

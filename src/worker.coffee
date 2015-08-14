@@ -1,34 +1,40 @@
 worker = require('pantheon-helpers').worker
 _ = require('underscore')
 follow = require('follow')
-couch_utils = require('./couch_utils')
+couchUtils = require('./couch_utils')
 conf = require('./config')
-validate = require('./validation')
+validation = require('./validation')
 logger = require('./loggers').worker
+api = require('./api')
+
+{getPlugins} = require('../utils')
+plugins = getPlugins()
+handlers = plugins.map((plugin) ->
+  return {
+    name: plugin.name,
+    workers: plugin.workers(api, validation, couchUtils)
+  }
+)
+
 
 orgs = conf.ORGS
 
-handlers = {
-  gh: require('./workers/gh').handlers,
-  moirai: require('./workers/moirai').handlers,
-}
-
 # org workers
 for org in orgs
-  db = couch_utils.nano_system_user.use('org_' + org)
+  db = couchUtils.nano_system_user.use('org_' + org)
   worker.start_worker(logger,
                       db,
                       handlers,
-                      validate._get_doc_type,
-                      worker.get_plugin_handlers,
+                      validation._get_doc_type,
+                      worker.getPluginHandlers,
                      )
 
 
 # _users worker
-db = couch_utils.nano_system_user.use('_users')
+db = couchUtils.nano_system_user.use('_users')
 worker.start_worker(logger,
                     db,
                     handlers,
-                    validate._get_doc_type,
-                    worker.get_plugin_handlers,
+                    validation._get_doc_type,
+                    worker.getPluginHandlers,
                    )

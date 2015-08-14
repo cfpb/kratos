@@ -1,151 +1,166 @@
 _ = require('underscore')
 utils = require('../utils')
 couch_utils = require('../couch_utils')
-user_db = couch_utils.nano_system_user.use('_users')
 uuid = require('node-uuid')
 conf = require('../config')
 Promise = require('pantheon-helpers').promise
-doAction = require('pantheon-helpers').doAction
-validate = require('../validation')
+doAction = require('../doAction').doAction
+validation = require('../validation')
 
 users = {}
 
-process_req = (req) ->
+processReq = (req) ->
   params = req.params
-  user_name = params.user_id
-  return [user_name, params]
+  userName = params.userId
+  actor = req.session.user
+  if userName.indexOf('org.couchdb.user:') == 0
+    userName = userName.slice(17)
+  return [actor, userName, params]
 
 isInt = (s) ->
   return String(parseInt(s)) == s
 
-users.get_users = (opts, callback) ->
+users.getUsers = (client, opts, callback) ->
   ###
   opts:
-    all - return all users including deactivated users 
-          (default: false - return only active users)
+    enabled - true (default): return only enabled; false: return only disabled
     names - return only those active users with the names specified in the list
   
-  names will override all    
+  names will override disabled
   ###
-  if typeof(opts) == 'function' or opts == 'promise'
+  if _.isFunction(opts) or opts == 'promise'
     callback = opts
   opts or= {}
   params = {include_docs: 'true'}
   if opts.names
     params.keys = opts.names.map((name) -> [true, name])
-  else if opts.all not in ['true', true]
+  else
+    enabled = if (opts.enabled == false) then false else true
     _.extend(params, {
-      startkey: [true],
-      endkey: [true, {}],
+      startkey: [enabled],
+      endkey: [enabled, {}],
     })
-  return user_db.viewWithList('base', 'by_name', 'get_users', params, callback)
+  return client.use('_users').viewWithList('base', 'by_name', 'get_users', params, callback)
 
-users.handle_get_users = (req, resp) ->
+users.handleGetUsers = (req, resp) ->
   resource = null
-  for rsrc, rsrc_id of req.query
-    if rsrc in validate.auth.resources
+  for rsrc, rsrcId of req.query
+    if rsrc in validation.auth.resources
       resource = rsrc
       break
 
   if resource
-    if isInt(rsrc_id)
-      rsrc_id = parseInt(rsrc_id)
-    user_db
-      .viewWithList('base', 'by_resource_id', 'get_user', 
-                    {include_docs: true, key: [resource, rsrc_id]})
-      .pipe(resp)
+    if isInt(rsrcId)
+      rsrcId = parseInt(rsrcId)
+    users.getUserByResourceId(req.couch, resource, rsrcId).pipe(resp)
   else
-    users.get_users(req.query).pipe(resp)
+    req.query.enabled = req.query.enabled != 'false'
+    users.getUsers(req.couch, req.query).pipe(resp)
 
-users.get_user = (user_name, callback) ->
+users.getUserByResourceId = (client, resource, resourceId, callback) ->
+  return client.use('_users')
+    .viewWithList('base', 'by_resource_id', 'get_user', 
+                  {include_docs: true, key: [resource, resourceId]},
+                  callback
+                 )
+
+
+users.getUser = (client, userName, callback) ->
   ### will return system user if callback or promise, but not if stream ###
-  system_user_name = conf.COUCHDB.SYSTEM_USER
-  system_user = {name: system_user_name, roles: []}
-  is_system_user = conf.COUCHDB.SYSTEM_USER == user_name
-  if is_system_user and _.isFunction(callback)
-    return callback(null, system_user)
-  else if is_system_user and callback == 'promise'
-    return user_promise = Promise.resolve(system_user)
+  systemUserName = conf.COUCHDB.SYSTEM_USER
+  systemUser = {name: systemUserName, roles: []}
+  isSystemUser = conf.COUCHDB.SYSTEM_USER == userName
+  if isSystemUser and _.isFunction(callback)
+    return callback(null, systemUser)
+  else if isSystemUser and callback == 'promise'
+    return Promise.resolve(systemUser)
   else
-    return couch_utils.rewrite(user_db, 'base', '/users/org.couchdb.user:' + user_name, callback)
+    return couch_utils.rewrite(client.use('_users'), 'base', '/users/org.couchdb.user:' + userName, callback)
 
-users.handle_get_user = (req, resp) ->
-  [user_name, params] = process_req(req)
-  users.get_user(user_name).pipe(resp)  
+users.handleGetUser = (req, resp) ->
+  [actor, userName, params] = processReq(req)
+  users.getUser(req.couch, userName).pipe(resp)  
 
-users.add_role = (client, user_name, resource, role, callback) ->
-  user_id = 'org.couchdb.user:' + user_name
-  return doAction(client.use('_users'), 'base', user_id, {
+users.addRole = (actor, userName, resource, role) ->
+  # returns promise
+  userId = 'org.couchdb.user:' + userName
+  return doAction('_users', actor, userId, {
     a: 'r+',
     resource: resource
     role: role,
-  }, callback)
+  })
 
-users.remove_role = (client, user_name, resource, role, callback) ->
-  user_id = 'org.couchdb.user:' + user_name
-  return doAction(client.use('_users'), 'base', user_id, {
+users.removeRole = (actor, userName, resource, role) ->
+  # returns promise
+  userId = 'org.couchdb.user:' + userName
+  return doAction('_users', actor, userId, {
     a: 'r-',
     resource: resource
     role: role,
-  }, callback)
+  })
 
-users.handle_add_role = (req, resp) ->
-  [user_name, params] = process_req(req)
-  users.add_role(req.couch, user_name, params.resource, params.role).pipe(resp)
+users.handleAddRole = (req, resp) ->
+  [actor, userName, params] = processReq(req)
+  promise = users.addRole(actor, userName, params.resource, params.role)
+  Promise.sendHttp(promise, resp)
 
-users.handle_remove_role = (req, resp) ->
-  [user_name, params] = process_req(req)
-  users.remove_role(req.couch, user_name, params.resource, params.role).pipe(resp)
+users.handleRemoveRole = (req, resp) ->
+  [actor, userName, params] = processReq(req)
+  promise = users.removeRole(actor, userName, params.resource, params.role)
+  Promise.sendHttp(promise, resp)
 
-users.add_data = (client, user_name, path, data, callback) ->
-  user_id = 'org.couchdb.user:' + user_name
-  return doAction(client.use('_users'), 'base', user_id, {
+users.addData = (actor, userName, path, data) ->
+  userId = 'org.couchdb.user:' + userName
+  return doAction('_users', actor, userId, {
     a: 'd+',
     path: path
     data: data
-  }, callback)
+  })
 
 
-users.handle_add_data = (req, resp) ->
-  [user_name, params] = process_req(req)
-  path_string = params.path or ''
-  path = _.compact(path_string.split('/'))
+users.handleAddData = (req, resp) ->
+  [actor, userName, params] = processReq(req)
+  pathString = params.path or ''
+  path = _.compact(pathString.split('/'))
   data = req.body
 
-  # TODO: move into couch
+  # TODO: move into actionHandler
   if _.isArray(data) or not _.isObject(data)
     return resp.status(400).end(JSON.stringify({'error': 'bad_request ', 'msg': 'data must be an object - {}'}))
 
-  users.add_data(req.couch, user_name, path, data).pipe(resp)
+  promise = users.addData(actor, userName, path, data)
+  Promise.sendHttp(promise, resp)
 
-users.reactivate_user = (client, user_name, callback) ->
-  user_id = 'org.couchdb.user:' + user_name
-  doAction(client.use('_users'), 'base', user_id, {
+users.reactivateUser = (actor, userName) ->
+  userId = 'org.couchdb.user:' + userName
+  return doAction('_users', actor, userId, {
     a: 'u+',
-  }, callback)
+  })
 
-users.handle_reactivate_user = (req, resp) ->
-  [user_name, params] = process_req(req)
-  return users.reactivate_user(req.couch, user_name).pipe(resp)
+users.handleReactivateUser = (req, resp) ->
+  [actor, userName, params] = processReq(req)
+  promise users.reactivateUser(actor, userName)
+  Promise.sendHttp(promise, resp)
 
-users.deactivate_user = (client, user_name, callback) ->
-  user_id = 'org.couchdb.user:' + user_name
-  doAction(client.use('_users'), 'base', user_id, {
+users.deactivateUser = (actor, userName) ->
+  userId = 'org.couchdb.user:' + userName
+  doAction('_users', actor, userId, {
     a: 'u-',
-  }, callback)
+  })
 
-users.handle_deactivate_user = (req, resp) ->
-  [user_name, params] = process_req(req)
-  return users.deactivate_user(req.couch, user_name).pipe(resp)
+users.handleDeactivateUser = (req, resp) ->
+  [actor, userName, params] = processReq(req)
+  return users.deactivateUser(actor, userName)
+  Promise.sendHttp(promise, resp)
 
-users.create_user = (client, user_data, callback) ->
-  user_data.password = conf.COUCH_PWD
-  doAction(client.use('_users'), 'base', null, {
+users.createUser = (actor, userData) ->
+  userData.password = conf.COUCH_PWD
+  return doAction('_users', actor, null, {
     a: 'u+',
-    record: user_data
-  }, callback)
+    record: userData
+  })
 
-users.handle_create_user = (req, resp) ->
+users.handleCreateUser = (req, resp) ->
   ###
   body must be a hash ({}).
   body must include the following data:
@@ -164,6 +179,7 @@ users.handle_create_user = (req, resp) ->
 
   }
   ###
-  users.create_user(req.couch, req.body).pipe(resp)
+  promise = users.createUser(actor, req.body)
+  Promise.sendHttp(promise, resp)
 
 module.exports = users

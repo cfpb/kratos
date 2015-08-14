@@ -14,9 +14,13 @@ middleware = require('./middleware')
 
 app = express()
 app.use(bodyParser.json())
-app.use(middleware.auth_hack)
+app.use(middleware.authHack)
 app.use(session({secret: conf.SECRET_KEY, name: 'express_sess'}))
+app.use(middleware.systemAuth)
+app.use(middleware.ensureAuthenticated)
+app.use(middleware.ensureActive)
 app.use(middleware.couch)
+
 routes(app)
 
 server = app.listen(5000, () ->

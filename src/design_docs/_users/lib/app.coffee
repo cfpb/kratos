@@ -1,11 +1,6 @@
 _ = require('underscore')
-h = require('./helpers')
-validate = require('./validation/index')
-actions = require('./actions')
-audit = require('pantheon-helpers').design_docs.audit
-
-
-auth = validate.auth
+shared = require('./shared')
+helpers = require('pantheon-helpers').design_docs.helpers(shared)
 
 dd = 
   views:
@@ -51,36 +46,12 @@ dd =
 
   lists:
     get_users: (header, req) ->
-      out = []
-      while(row = getRow())
-        doc = row.doc
-        continue if not validate._is_user(doc)
-        doc = h.sanitize_user(doc)
-        out.push(doc)
-      return JSON.stringify(out)
+      helpers.lists.get_prepped_of_type(getRow, start, send, 'user', header, req)
     get_user: (header, req) ->
-      row = getRow()
-      if row
-        doc = h.sanitize_user(row.doc)
-        return JSON.stringify(doc)
-      else
-        throw(['error', 'not_found', 'document matching query does not exist'])
+      helpers.lists.get_first_prepped(getRow, start, send, header, req)
 
   shows:
-    get_user: (doc, req) ->
-      user = h.sanitize_user(doc)
-      user.perms = {
-        team: {
-          add: auth.add_team(user)
-          remove: auth.remove_team(user)
-        }
-      }
-      return {body: JSON.stringify(user), "headers" : {"Content-Type" : "application/json"}}
-
-  validate_doc_update: actions.validate_doc_update
-
-  updates:
-    do_action: actions.do_action
+    get_user: helpers.shows.get_prepped
 
   rewrites: [
     {
@@ -89,7 +60,5 @@ dd =
       query: {},
     },
   ]
-
-audit.mixin(dd)
 
 module.exports = dd

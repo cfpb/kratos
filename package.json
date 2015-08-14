@@ -3,7 +3,8 @@
   "description": "Enterprise Authorization Enforcement",
   "author": "David Greisen <david.greisen@cfpb.gov",
   "scripts": {
-    "test": "icake test"
+    "test": "icake test",
+    "specs": "icake -s test"
   },
   "dependencies": {
     "basic-auth": "1.0.0",
@@ -20,7 +21,9 @@
     "underscore": "1.7.0",
     "underscore.string": "~3.0.3",
     "pantheon-helpers": "git+https://github.com/cfpb/pantheon-helpers.git#v0.1.0",
-    "validoc": "git+https://github.com/dgreisen/validoc.git"
+    "validoc": "git+https://github.com/dgreisen/validoc.git",
+    "kratos-gh": "git+https://github.com/cfpb/kratos-gh.git",
+    "kratos-moirai": "git+https://github.com/cfpb/kratos-moirai.git"
   },
   "devDependencies": {
     "iced-coffee-script": "1.8.0-e",

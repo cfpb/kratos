@@ -1,4 +1,5 @@
 deepExtend = require('pantheon-helpers').utils.deepExtend
+path = require('path')
 
 try
     config_secret = require('./config_secret')
@@ -12,7 +13,7 @@ config =
     HTTPS: false
     SYSTEM_USER: 'admin'
   RESOURCES:
-    GH:
+    GH: # default plugin npm package kratos-gh
       ORG_ID: undefined # org id (integer)
       ORG_NAME: undefined # org name (string)
       TEMPLATE_REPO: undefined # fully qualified url to git repo
@@ -29,6 +30,7 @@ config =
 
   SECRET_KEY: undefined # secret key for hmac
   COUCH_PWD: undefined # couchdb password
+  COUCH_DESIGN_DOCS_DIR: path.join(__dirname, '/design_docs')
   ORGS: []
   LOGGERS:
     WEB:
